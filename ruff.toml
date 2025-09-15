@@ -1,0 +1,4 @@
+line-length = 100
+select = ["E", "F", "I", "UP", "B", "PIE", "RUF"]
+[lint.isort]
+known-first-party = ["qmltorch"]

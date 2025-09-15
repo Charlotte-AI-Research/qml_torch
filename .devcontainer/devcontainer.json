@@ -1,0 +1,8 @@
+{
+"name": "QML Torch (CPU)",
+"context": "..",
+"dockerFile": "../Dockerfile",
+"customizations": { "vscode": { "extensions": ["ms-python.python", "ms-python.vscode-pylance"] } },
+"workspaceFolder": "/work",
+"mounts": ["source=${localWorkspaceFolder},target=/work,type=bind"]
+}
