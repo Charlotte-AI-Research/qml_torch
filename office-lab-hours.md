@@ -8,7 +8,6 @@ Feel free to drop by during these windows if you need help with setup, coding, o
 ## Weekly Schedule
 
 **Mondays:** 3:30 – 5:00 PM  
-**Tuesdays:** 10:30 AM – 12:30 PM  
 **Fridays:** 12:30 – 3:00 PM  
 
 ---
