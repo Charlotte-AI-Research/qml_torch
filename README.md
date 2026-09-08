@@ -23,3 +23,7 @@ The first example is `examples/01_quantum_layer_torch.py`. A working PennyLane i
 4. A short end-of-semester demo and maintainer handoff notes.
 
 Read [docs/MEETING_PLAN_FALL_2026.md](docs/MEETING_PLAN_FALL_2026.md) for tomorrow's interest meeting and [docs/TEAM_SCOPE.md](docs/TEAM_SCOPE.md) for ownership boundaries.
+
+## Learn QML
+
+Read [Everything You Need to Know About Quantum Machine Learning — Week 1](https://summerdoesthings.substack.com/p/everything-you-need-to-know-about) for the conceptual introduction to QML, QML Torch, and the research-artifact approach behind the Fall 2026 team.
