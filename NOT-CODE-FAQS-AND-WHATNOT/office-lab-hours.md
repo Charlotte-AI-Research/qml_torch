@@ -1,18 +1,5 @@
-# Office Hours
+# QML support hours
 
-These are the dedicated times I’ll be available for questions, collaboration, and project support.  
-Feel free to drop by during these windows if you need help with setup, coding, or understanding concepts.
+Support hours are for setup help, debugging, and questions about a small team issue. They are optional and do not replace the weekly general meeting.
 
----
-
-## Weekly Schedule
-
-**Mondays:** 3:30 – 5:00 PM  
-**Fridays:** 12:30 – 3:00 PM  
-
----
-
-## Notes
-- Office hours are flexible — if you can’t make it, reach out to schedule a 1:1.  
-- Sessions can be used for debugging, walkthroughs, or brainstorming.  
-- Please come prepared with specific questions or code snippets to make the most of the time.  
+Bring a reproducible error, a focused question, or a draft contribution. Students can attend support hours while they are still learning and before they become active contributors. Current times are announced with the weekly CAIR QML meeting notice.
