@@ -70,4 +70,4 @@ of speedup are deferred.
 - An invalid shape or configuration fails before training with a recovery step.
 - A saved result explains both user choices and hidden defaults.
 - A repeated seeded run behaves within documented tolerances.
-- Default workloads finish inside the runtime budget selected in QMLT-018.
+- Default workloads finish inside the runtime budget selected in QMLT-005.

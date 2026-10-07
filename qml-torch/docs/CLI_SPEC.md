@@ -46,7 +46,7 @@ Continue? [Y/n]
 ## Non-interactive equivalent
 
 Every prompt must have a flag or a config-file field so CI and research reruns do
-not depend on terminal input. The precise flags are defined with QMLT-011 after
+not depend on terminal input. The precise flags are defined in QMLT-004 after
 QMLT-001 resolves the option names.
 
 ## Required output

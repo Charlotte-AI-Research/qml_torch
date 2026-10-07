@@ -1,265 +1,203 @@
-# QML Torch implementation backlog
+# QML Torch — first-version tasks
 
-This backlog starts after the planning scaffold. Tasks are ordered so that a
-small team can open them as GitHub issues and build vertical slices without first
-creating the whole system.
+For now, the project has only **five main tasks**. Complete them in order. Each
+task can be assigned to one person or a small group, and each checklist item can
+become a smaller GitHub issue later if needed.
 
-Priority meanings:
+The goal of version 0.1 is intentionally small:
 
-- **P0:** required for the first usable path
-- **P1:** required before a v0.1 release
-- **P2:** useful follow-up after v0.1 is stable
+> Run one tiny classification example, choose a few quantum settings, train a
+> classical model and a hybrid VQC model, and display both results.
 
-## Milestone 0 — settle the contract
+## What the team will probably need
 
-### QMLT-001 — resolve the open product decisions (P0)
+You do **not** need a quantum computer or a GPU. A normal laptop is enough.
 
-**Depends on:** nothing
+### Tools
 
-- Decide what the requested `Standard` mode means.
-- Decide which encodings and measurements ship in v0.1.
-- Choose the policy when feature count and qubit count differ.
-- Define the minimum contract expected from a user's `train.py`.
-- Record decisions in `docs/OPEN_QUESTIONS.md` and update the specs.
+- Python 3.11 is the recommended starting version.
+- Git and GitHub for sharing work.
+- A Python virtual environment (`venv`).
+- A code editor such as VS Code.
 
-**Done when:** every v0.1 question in `OPEN_QUESTIONS.md` is marked resolved and
-has one testable behavior.
+### Likely Python packages
 
-### QMLT-002 — add package and developer metadata (P0)
+- `torch` — models and training
+- `pennylane` — quantum circuits and simulator
+- `numpy` — basic numerical work
+- `typer` — simple command-line interface
+- `pytest` — tests
+- `ruff` — formatting and linting
 
-**Depends on:** QMLT-001
+Task 2 will put the final package list in `pyproject.toml`, so team members should
+not install a large collection of packages yet.
 
-- Add `pyproject.toml` with Python, PyTorch, and PennyLane version ranges.
-- Register the future `qml-torch` console command.
-- Configure Ruff, mypy, pytest, and a minimal CI job.
-- Add installation and contribution instructions.
+### Helpful knowledge
 
-**Done when:** a clean environment can install an empty development package and
-run the quality commands documented by the repository.
+- Basic Python functions, classes, and imports
+- Basic PyTorch tensors, models, losses, and optimizers
+- Basic Git branches and pull requests
 
-### QMLT-003 — define typed configuration models (P0)
+Quantum experience is helpful for Task 3, but beginners can learn the small amount
+needed from PennyLane's introductory circuit examples.
 
-**Depends on:** QMLT-001, QMLT-002
+## Simple v0.1 defaults
 
-- Model qubits, encoding, circuit mode, shots, measurement, seed, and task type.
-- Keep backend and ansatz out of the beginner-facing configuration.
-- Support config construction from both CLI answers and Python.
-- Make defaults serializable for reports and reproducibility.
+These are the recommended choices for the first working version. Task 1 confirms
+them before coding begins.
 
-**Done when:** valid choices round-trip to a saved config and invalid choices
-produce a specific, beginner-readable error.
+- One small binary-classification dataset
+- PennyLane's local simulator
+- PyTorch only
+- Angle encoding only
+- Pauli-Z expectation measurement only
+- One output value per qubit
+- Require `number of features == number of qubits` for now
+- Hide the ansatz and backend from beginners
+- Analytic mode as the default, with one finite-shot option
+- Run both a classical baseline and a hybrid VQC model
 
-## Milestone 1 — compile a quantum layer
+More encodings, feature mapping, Qiskit, TensorFlow, hardware, and custom circuits
+can come after version 0.1 works.
 
-### QMLT-004 — build the preflight validator/compiler (P0)
+---
 
-**Depends on:** QMLT-003
+## QMLT-001 — agree on the first version
 
-- Validate environment versions and PennyLane availability.
-- Inspect input/output shapes through an explicit user contract.
-- Validate shots, qubits, encoding constraints, measurement, and task support.
-- Return all actionable problems in one pass when possible.
-- Produce a read-only compiled experiment plan before training.
+**Goal:** Make the project small and remove unclear words before anyone starts
+coding.
 
-**Done when:** preflight succeeds for the supported example and fails early for
-each invalid configuration covered by unit tests.
+**Good task for:** someone comfortable organizing ideas and explaining them
+clearly. Deep quantum knowledge is not required.
 
-### QMLT-005 — implement the PennyLane backend adapter (P0)
+### To do
 
-**Depends on:** QMLT-003
+- [ ] Confirm or edit the “Simple v0.1 defaults” above.
+- [ ] Replace the unclear word `Standard` with clear model choices. Recommended:
+      `classical`, `hybrid-vqc`, and `both`.
+- [ ] Decide what the example `train.py` must provide. Keep it to one small,
+      documented function that returns training and test data.
+- [ ] Decide a safe qubit range for the first example, such as 2–6 qubits.
+- [ ] Update `docs/OPEN_QUESTIONS.md` with the final answers.
 
-- Create the hidden default simulator device.
-- Support analytic execution and finite shots.
-- Isolate PennyLane-specific QNode and differentiation details.
-- Expose backend capabilities to validation without exposing backend selection.
+### Finished when
 
-**Done when:** the adapter can execute a tiny differentiable circuit on CPU and
-the rest of the package does not directly construct a PennyLane device.
+The team can describe the first version in a few sentences, and all seven blocking
+questions in `OPEN_QUESTIONS.md` have simple answers.
 
-### QMLT-006 — implement feature-to-qubit adaptation (P0)
+---
 
-**Depends on:** QMLT-001, QMLT-003
+## QMLT-002 — set up the Python project
 
-- Accept tensors shaped `[batch, features]` and a single-sample convenience form.
-- Apply the resolved policy for fewer/more features than qubits.
-- Never silently discard input features.
-- Include the chosen adaptation in the experiment report.
+**Goal:** Make the empty project installable and give the rest of the team one
+shared development setup.
 
-**Done when:** equal, fewer, and greater feature-count cases have documented shape
-behavior, gradients where applicable, and tests.
+**Needs:** Python packaging basics, Git, and a virtual environment. Complete
+QMLT-001 first.
 
-### QMLT-007 — add the v0.1 encoding registry (P0)
+### To do
 
-**Depends on:** QMLT-001, QMLT-005, QMLT-006
+- [ ] Add `pyproject.toml` with only the packages needed for v0.1.
+- [ ] Add the `qml_torch` package and a `qml-torch` command entry point.
+- [ ] Add a small configuration object for qubits, encoding, mode, shots, and
+      measurement.
+- [ ] Add simple validation for missing packages and invalid settings.
+- [ ] Configure `pytest` and `ruff`.
+- [ ] Write setup commands that work in a clean virtual environment.
 
-- Implement only the encodings approved for v0.1.
-- Give each encoding a name, constraints, circuit builder, and help text.
-- Keep encodings independent from measurements and training.
+### Finished when
 
-**Done when:** each advertised encoding compiles, differentiates where required,
-and rejects unsupported input shapes with an actionable message.
+A teammate can clone the project, create a virtual environment, install it, run
+`qml-torch --help`, and run an empty test suite without errors.
 
-### QMLT-008 — add versioned hidden circuit presets (P0)
+---
 
-**Depends on:** QMLT-001, QMLT-005, QMLT-007
+## QMLT-003 — build one working quantum layer
 
-- Implement the resolved `Standard`/VQC behavior.
-- Hide ansatz selection behind stable, versioned presets.
-- Define parameter shapes from qubit count and preset depth.
-- Make the selected internal preset visible in reports for reproducibility.
+**Goal:** Create the smallest useful PyTorch quantum layer. Do not add multiple
+backends, encodings, or circuit builders yet.
 
-**Done when:** users need no gate-level knowledge, but a run can still be exactly
-identified and recreated.
+**Needs:** basic PyTorch `nn.Module` knowledge and PennyLane's beginner QNode
+tutorial. Complete QMLT-002 first.
 
-### QMLT-009 — implement measurements and output contract (P0)
+### To do
 
-**Depends on:** QMLT-001, QMLT-005, QMLT-008
+- [ ] Create a hidden PennyLane `default.qubit` simulator.
+- [ ] Accept an input shaped `[batch, features]`.
+- [ ] For v0.1, give a friendly error unless `features == qubits`.
+- [ ] Encode features with angle encoding.
+- [ ] Add one small trainable VQC ansatz chosen by the library.
+- [ ] Measure Pauli-Z expectation on every qubit.
+- [ ] Return `[batch, qubits]`, meaning one value per qubit for every sample.
+- [ ] Confirm a PyTorch optimizer can update the circuit parameters.
 
-- Implement the v0.1 measurement choices.
-- Return one scalar per qubit.
-- Preserve batch dimension: `[batch, qubits]`.
-- Document analytic versus finite-shot behavior and value ranges.
+### Finished when
 
-**Done when:** output shapes and gradients are tested across supported qubit
-counts, measurements, and shot modes.
+A tiny tensor can pass through `QuantumLayer`, produce the expected shape, and
+complete one optimizer step without the user creating a PennyLane device or
+writing a circuit.
 
-### QMLT-010 — build the PyTorch `QuantumLayer` (P0)
+---
 
-**Depends on:** QMLT-004 through QMLT-009
+## QMLT-004 — add the guided CLI and comparison
 
-- Wrap the compiled QNode in `torch.nn.Module`.
-- Register trainable parameters in `state_dict`.
-- Preserve dtype/device behavior where supported.
-- Give unsupported GPU or mixed-precision use a clear message.
+**Goal:** Give beginners the simple experience described in the project idea.
 
-**Done when:** a small PyTorch optimizer step changes quantum parameters and the
-documented input/output contracts pass integration tests.
+**Needs:** basic command-line programming and PyTorch training loops. Complete
+QMLT-003 first.
 
-## Milestone 2 — guided training experience
+### To do
 
-### QMLT-011 — create the CLI preflight and prompt flow (P0)
+- [ ] Implement `qml-torch run train.py`.
+- [ ] Check the environment, training-script contract, and feature shape before
+      training starts.
+- [ ] Ask for qubits, model mode, shots, encoding, and measurement. In v0.1,
+      encoding and measurement may each have only one supported choice.
+- [ ] Build one small classical model and one small hybrid VQC model.
+- [ ] Train both with the same data split, seed, epochs, and accuracy metric.
+- [ ] Print the quantum circuit, both accuracies, both runtimes, and the settings.
+- [ ] Save a small result file so the run can be repeated.
+- [ ] Make sure importing `qml_torch` does not automatically open the CLI.
 
-**Depends on:** QMLT-003, QMLT-004
+### Finished when
 
-- Implement `qml-torch run train.py`.
-- Run preflight before showing training prompts.
-- Prompt for qubits, mode, encoding, shots, and measurement only.
-- Support non-interactive flags for CI and reproducible reruns.
-- Never prompt merely because `qml_torch` was imported.
+The example command runs from start to finish on a laptop and clearly shows the
+classical and hybrid results. The output should describe an experiment, not claim
+quantum advantage.
 
-**Done when:** an interactive beginner path and an equivalent non-interactive
-command produce the same saved configuration.
+---
 
-### QMLT-012 — define the minimal user-script protocol (P0)
+## QMLT-005 — test it and teach someone to use it
 
-**Depends on:** QMLT-001, QMLT-004, QMLT-011
+**Goal:** Make the first version understandable and dependable enough for another
+beginner to try.
 
-- Load only the explicitly documented callable/data contract from `train.py`.
-- Avoid executing arbitrary code during static preflight where possible.
-- Explain missing functions, tensors, loaders, or labels clearly.
-- Document the security boundary: user scripts are trusted when executed.
+**Needs:** `pytest`, careful documentation, and the working flow from QMLT-004.
+This person can start drafting the tutorial while earlier tasks are in progress.
 
-**Done when:** the happy-path example loads successfully and each missing contract
-element has a focused end-to-end failure test.
+### To do
 
-### QMLT-013 — add reusable training loops (P0)
+- [ ] Test configuration errors and the `features == qubits` rule.
+- [ ] Test the quantum layer's input/output shape and optimizer step.
+- [ ] Add one end-to-end test for `qml-torch run train.py`.
+- [ ] Write a short beginner tutorial using the included toy dataset.
+- [ ] Explain qubits, encoding, shots, measurement, and VQC in ML-friendly words.
+- [ ] Test the tutorial in a clean environment on a normal laptop.
+- [ ] Record approximate runtime and set safe default qubit/epoch limits.
+- [ ] Document known limitations and common setup errors.
 
-**Depends on:** QMLT-010, QMLT-012
+### Finished when
 
-- Support one small supervised classification task first.
-- Share split, seed, epoch budget, loss, and metric logic across models.
-- Keep data loading out of the quantum modules.
-- Capture loss history, runtime, and failures.
+A person who knows basic PyTorch but little quantum computing can follow the
+tutorial, finish a run, understand the output, and recover from common mistakes.
 
-**Done when:** both comparison models can train through the same protocol with a
-fixed seed and bounded laptop runtime.
+## Not part of these five tasks
 
-### QMLT-014 — build a fair classical baseline (P0)
+Wait until the first version works before adding:
 
-**Depends on:** QMLT-001, QMLT-013
-
-- Define a small baseline with a documented parameter-matching policy.
-- Use the same data split, preprocessing, seed policy, epochs, and metric.
-- Label comparisons as experimental results, not quantum advantage.
-
-**Done when:** one command trains classical and hybrid models under a recorded
-comparison protocol.
-
-### QMLT-015 — render circuits and result reports (P1)
-
-**Depends on:** QMLT-008, QMLT-009, QMLT-013, QMLT-014
-
-- Print a compact circuit summary and optionally save a diagram.
-- Show classical and hybrid metrics, runtime, warnings, and failed-run context.
-- Save machine-readable configuration and results.
-- Record seed, dependency versions, hidden preset, and backend implementation.
-
-**Done when:** a second user can identify and rerun an experiment from its output
-folder without guessing hidden settings.
-
-## Milestone 3 — make v0.1 dependable
-
-### QMLT-016 — complete the test matrix (P1)
-
-**Depends on:** all P0 implementation tasks
-
-- Unit-test configuration, validation, shape rules, registries, and errors.
-- Integration-test PennyLane/PyTorch gradients and optimizer behavior.
-- End-to-end test CLI interactive-equivalent and non-interactive runs.
-- Mark slow and finite-shot statistical tests explicitly.
-
-**Done when:** CI covers the supported Python versions and the critical user path
-has a deterministic smoke test.
-
-### QMLT-017 — write beginner examples and tutorial (P1)
-
-**Depends on:** QMLT-015
-
-- Add a minimal generated/toy binary-classification example.
-- Explain features, qubits, encoding, shots, and measurements in ML language.
-- Show CLI and Python entry points.
-- Add troubleshooting for installation, shapes, gradients, and runtime.
-
-**Done when:** a user with PyTorch knowledge but no quantum background can finish
-the tutorial without editing library internals.
-
-### QMLT-018 — benchmark and set runtime guardrails (P1)
-
-**Depends on:** QMLT-014, QMLT-015
-
-- Benchmark supported qubit counts in analytic and sampled modes.
-- Pick safe prompt defaults and warn before expensive configurations.
-- Record accuracy distribution across multiple seeds, not only the best run.
-
-**Done when:** v0.1 documents approximate laptop runtimes and enforces an agreed
-maximum default workload.
-
-### QMLT-019 — harden errors and cancellation (P1)
-
-**Depends on:** QMLT-011 through QMLT-018
-
-- Add beginner-readable messages with recovery suggestions.
-- Handle Ctrl-C and partial report writing cleanly.
-- Keep internal tracebacks available behind a debug flag.
-- Prevent unsupported choices from reaching a long training run.
-
-**Done when:** expected failures are tested and do not leave misleading success
-artifacts.
-
-### QMLT-020 — release v0.1 (P1)
-
-**Depends on:** QMLT-016 through QMLT-019
-
-- Freeze documented behavior and supported combinations.
-- Run the clean-environment installation and tutorial checks.
-- Publish limitations, changelog, and maintainer handoff notes.
-
-**Done when:** the v0.1 user journey meets every success criterion in `readme.md`.
-
-## Later work — explicitly not on the v0.1 critical path
-
-- **QMLT-101 (P2):** Qiskit backend adapter after the backend contract is stable.
-- **QMLT-102 (P2):** TensorFlow frontend after PyTorch behavior is stable.
-- **QMLT-103 (P2):** additional tasks, datasets, encodings, and measurements.
-- **QMLT-104 (P2):** optional expert mode for ansatz/backend selection.
-- **QMLT-105 (P2):** hardware execution with credentials, queues, and cost guards.
+- Qiskit or real quantum hardware
+- TensorFlow
+- amplitude encoding or many measurement types
+- automatic feature compression or data re-uploading
+- custom ansatz builders
+- large datasets or claims of quantum speedup
