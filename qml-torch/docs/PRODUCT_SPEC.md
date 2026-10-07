@@ -1,5 +1,11 @@
 # Product specification
 
+> **What:** This file describes the users, problem, requirements, and limits of
+> QML Torch version 0.1.
+>
+> **Why:** It tells the team what they are building and helps them reject features
+> that do not serve the first beginner experience.
+
 ## Problem
 
 PyTorch users who are new to quantum computing face several decisions before they

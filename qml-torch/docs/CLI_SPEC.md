@@ -1,5 +1,11 @@
 # CLI experience specification
 
+> **What:** This file defines what the future `qml-torch` command should ask,
+> validate, display, save, and return.
+>
+> **Why:** It keeps the command-line experience predictable and beginner-friendly
+> even when different teammates build its individual parts.
+
 ## Main command
 
 ```text

@@ -1,5 +1,10 @@
 # QML Torch — project scaffold
 
+> **What:** This is the starting page and map for the whole QML Torch project.
+>
+> **Why:** It helps a new contributor understand the idea, boundaries, and folder
+> layout before opening the more detailed files.
+
 QML Torch is planned as a beginner-friendly PyTorch extension for prototyping
 hybrid quantum machine-learning models. A user should be able to bring ordinary
 PyTorch training code, run a guided command, choose a few understandable quantum

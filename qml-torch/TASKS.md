@@ -1,5 +1,11 @@
 # QML Torch — first-version tasks
 
+> **What:** This file splits the first working version into five approachable
+> tasks, with requirements, checklists, and completion rules.
+>
+> **Why:** It gives the team a simple build order and prevents the first version
+> from becoming too large or confusing.
+
 For now, the project has only **five main tasks**. Complete them in order. Each
 task can be assigned to one person or a small group, and each checklist item can
 become a smaller GitHub issue later if needed.
@@ -103,6 +109,8 @@ QMLT-001 first.
       measurement.
 - [ ] Add simple validation for missing packages and invalid settings.
 - [ ] Configure `pytest` and `ruff`.
+- [ ] Start every new Python file with a short module docstring explaining what
+      the file owns and why it exists.
 - [ ] Write setup commands that work in a clean virtual environment.
 
 ### Finished when

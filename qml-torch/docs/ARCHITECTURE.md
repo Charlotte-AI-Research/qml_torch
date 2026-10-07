@@ -1,5 +1,11 @@
 # Planned architecture
 
+> **What:** This file shows how the future parts of the library connect and what
+> each part is responsible for.
+>
+> **Why:** Clear boundaries prevent CLI, PyTorch, PennyLane, training, and reports
+> from becoming one large file that is difficult to test or replace.
+
 This document defines boundaries, not implementations. The folder intentionally
 contains no Python modules yet.
 

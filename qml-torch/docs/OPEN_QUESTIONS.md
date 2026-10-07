@@ -1,5 +1,10 @@
 # Open product decisions
 
+> **What:** This file lists choices the team still needs to make before coding.
+>
+> **Why:** Writing unclear decisions down prevents contributors from building
+> different meanings for terms such as `Standard` or feature-to-qubit mapping.
+
 These decisions must be resolved in QMLT-001 before implementation. Each answer
 should update `PRODUCT_SPEC.md`, `CLI_SPEC.md`, and the related acceptance tests.
 

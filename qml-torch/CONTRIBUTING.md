@@ -1,5 +1,10 @@
 # Contributing to the planned project
 
+> **What:** This file explains how team members should prepare and submit changes.
+>
+> **Why:** Shared contribution rules keep changes small, reviewable, tested, and
+> inside the agreed first-version scope.
+
 Implementation has not started in this nested scaffold. Begin with the earliest
 unblocked item in `TASKS.md` and keep each change small enough to review.
 
