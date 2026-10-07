@@ -1,1 +1,1 @@
-qml lead
+qml lead & division founder
