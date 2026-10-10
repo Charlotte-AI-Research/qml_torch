@@ -6,12 +6,7 @@ import torch
 import torch.nn as nn
 class BasicQuantumLayer(nn.Module):
 
-    def __init__(
-        self,
-        qubits: int,
-        encoding_gate: str = "Y",
-        layers: int = 1,
-    ):
+    def __init__(self,qubits: int,encoding_gate: str = "Y",layers: int = 1,):
         super().__init__()
 
         if qubits < 1:
