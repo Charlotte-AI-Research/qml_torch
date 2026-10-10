@@ -130,13 +130,13 @@ tutorial. Complete QMLT-002 first.
 
 ### To do
 
-- [ ] Create a hidden PennyLane `default.qubit` simulator.
-- [*] Accept an input shaped `[batch, features]`.
-- [*] For v0.1, give a friendly error unless `features == qubits`.
-- [ ] Encode features with angle encoding.
-- [*] Add one small trainable VQC ansatz chosen by the library.
-- [ ] Measure Pauli-Z expectation on every qubit.
-- [*] Return `[batch, qubits]`, meaning one value per qubit for every sample.
+- [X] Create a hidden PennyLane `default.qubit` simulator.
+- [X] Accept an input shaped `[batch, features]`.
+- [X] For v0.1, give a friendly error unless `features == qubits`.
+- [X] Encode features with angle encoding.
+- [X] Add one small trainable VQC ansatz chosen by the library.
+- [X] Measure Pauli-Z expectation on every qubit.
+- [X] Return `[batch, qubits]`, meaning one value per qubit for every sample.
 - [ ] Confirm a PyTorch optimizer can update the circuit parameters.
 
 ### Finished when
