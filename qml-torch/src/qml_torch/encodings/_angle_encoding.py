@@ -1,9 +1,7 @@
 import numpy as np
-import torch as nn
+import torch
 import pennylane as qml
 
 def angle_encoding(inputs: torch.Tensor,qubits: int,selected_gate: str = "Y",):
     #Left to do
-
-    
-    pass
+    qml.AngleEmbedding(inputs, wires=range(qubits), rotation=selected_gate)
