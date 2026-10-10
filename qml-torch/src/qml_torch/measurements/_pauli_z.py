@@ -4,6 +4,4 @@ import pennylane as qml
 
 def pauli_z_output(qubits: int):
     #left to do
-
-    
-    pass
+    return [qml.expval(qml.PauliZ(i)) for i in range(qubits)]
