@@ -1,1 +1,249 @@
-September 2026
+#September 2026 
+
+import json 
+import random
+import time
+from pathlib import Path
+from typing import Any
+
+import pennylane as qml
+import torch
+from torch import nn
+
+#binary classifier
+class ClassicalModel(nn.Module):
+
+#initialize model
+    def __init__(self, n_features: int):
+        super().__init__()
+        self.linear = nn.Linear(n_features, 1)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        return self.linear
+    
+class HybridVQCModel(nn.Module):
+
+    #Quantum layer with a classical output layer
+    def __init__(self, n_qubits, shots):
+        # initialize hybrid model
+        super().__init__()
+        self.quantum = QuantumLayer(n_qubits = n_qubits, shots = shots)
+        self.output = nn.Linear(n_qubits, 1)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        #Return one prediction score per sample
+        measurements = self.quantum(inputs)
+        return self.output(measurements)
+
+def load_data_script(script_path):
+    #Load and validate data from training model
+    if not script_path.is_file():
+        raise FileNotFoundError(f"Training script not found {script_path}")
+    namespace: dict[str, Any] = {"__name__": "qml_torch_user_train", 
+                                 "__file__": str(script_path.resolve())}
+    exec(compile(script_path.read_text(encoding="utf-8"), str(script_path), "exec"), namespace,)
+
+    get_data = namespace.get("get_data")
+
+    if not callable(get_data):
+        raise ValueError("The training script must define get_data()")
+
+    data = get_data
+
+    if not isinstance(data, (tuple, list)) or len(data) != 4:
+        raise ValueError("get_data() must return x_train, y_train," "x_test, y_test")
+
+    x_train, y_train, x_test, y_test = data
+
+    tensors = (x_train, y_train, x_test, y_test)
+
+    if not all(isinstance(item, torch.Tensor) for item in tensors):
+        raise TypeError("All four data values must be Pytorch tensors")
+
+    if x_train.ndim != 2 or x_test.ndim !=2:
+        raise ValueError("Features must have shape [samples, features]")
+
+    if x_train.shape[0] == 0 or x_test.shape[0] == 0:
+        raise ValueError("Training and test data cannot be empty")
+
+    if x_train.shape[1] == 0:
+        raise ValueError("The dataset must contain features")
+
+    if x_train.shape[1] != x_test.shape[1]:
+        raise ValueError("Training and test data must have the same features")
+
+    if y_train.numel() != x_train.shape[0]:
+        raise ValueError("Training labels must match the training sampels")
+
+    if y_test.numel() != x_test.shape[0]:
+        raise ValueError("Test labels must match the test samples")
+
+    x_train = x_train.to(dtype=torch.float32)
+    x_test = x_test.to(dtype=torch.float32)
+    y_train = y_train.reshape(-1).to(dtype=torch.float32)
+    y_test = y_test.reshape(-1).to(dtype=torch.float32)
+
+    for label in (y_train, y_test):
+        if not torch.all((labels == 0) | (labels == 1)):
+            raise ValueError("Labels must contain only 0 and 1")
+
+    for features in (x_train, x_test):
+        if not torch.isfinite(features).all():
+            raise ValueError("Features must contain finite values")
+
+    return x_train, x_test, y_train, y_test
+
+def train_and_evaluate(model: nn.Module, x_train: torch.Tensor, x_test: torch.Tensor, y_train: torch.Tensor, y_test: torch.Tensor, epochs: int,) -> dict[str, float]:
+    #Train a model and calculate test accuracy and runtime
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
+    loss_function = nn.BCEWithLogitsLoss()
+
+    start_time = time.perf_counter()
+
+    model.train()
+
+    for _ in range(epochs):
+        optimizer.zero_grad()
+
+        scores = model(x_train).reshape(-1)
+        loss = loss_function(scores, y_train)
+
+        loss.backward()
+        optimizer.step()
+
+    model.eval()
+
+    with torch.no_grad():
+        scores = model(x_test).reshape(-1)
+        predictions = (scores >= 0).to(torch.float32)
+
+        accuracy = ((predictions == y_test).to(torch.float32) .mean() .item())
+
+    runtime = time.perf_counter() - start_time
+
+    return {"test_accuracy": accuracy,"runtime_seconds": runtime, }
+def run_experiment( script_path: Path, n_qubits: int, mode: str, shots: int | None, epochs: int, seed: int, output_path: Path,) -> dict[str, Any]:
+    """Run the selected models and save their comparison."""
+
+    if mode not in {"classical", "hybrid-vqc", "both"}:
+        raise ValueError( "Mode must be classical, hybrid-vqc, or both.")
+
+    if not 2 <= n_qubits <= 6:
+        raise ValueError("Quibits must be between 2 and 6.")
+
+    if shots is not None and shots < 1:
+        raise ValueError("Shots must be a positive integer.")
+
+    if epochs < 1:
+        raise ValueError("Epochs must be at least 1.")
+
+    x_train, y_train, x_test, y_test = load_data_script( script_path)
+
+    if mode in {"hybrid-vqc", "both"}:
+        if x_train.shape[1] != n_qubits:
+            raise ValueError("The number of features must equal the number " f"of qubits. Found {x_train.shape[1]} features " f"and {n_qubits} qubits.")
+
+    model_names = ( ["classical", "hybrid-vqc"] if mode == "both"else [mode] )
+
+    model_results: dict[str, Any] = {}
+    circuit_text = None
+
+    for model_name in model_names:
+        random.seed(seed)
+        torch.manual_seed(seed)
+
+        if model_name == "classical":
+            model = ClassicalModel(x_train.shape[1])
+        else:
+            model = HybridVQCModel(n_qubits, shots)
+
+        model_results[model_name] = train_and_evaluate(  model, x_train,  y_train,   x_test,    y_test, epochs, )
+
+        if model_name == "hybrid-vqc":
+            quantum_layer = model.quantum
+            draw_circuit = qml.draw(quantum_layer.circuit)
+
+            circuit_text = draw_circuit( x_train[0], quantum_layer.weights,)
+
+    results: dict[str, Any] = {"experiment": "qml-torch-v0.1", "seed": seed,"epochs": epochs,"settings": { "qubits": n_qubits, "mode": mode, "shots": shots, "encoding": "angle",  "measurement": "PauliZ",},
+        "models": model_results,"circuit": circuit_text,
+        "note": ( "Experimental comparison only. ""Results do not establish quantum advantage." ), }
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    output_path.write_text(json.dumps(results, indent=2),encoding="utf-8",)
+
+    return results
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+"""CLI """
+from pathlib import Path
+import json
+import typer
+
+
+app = typer.Typer()
+
+
+@app.command()
+def run(script: Path):
+    """Run and compare the classical and hybrid quantum models."""
+
+    # Check that the training script exists.
+    if not script.is_file():
+        print(f"Error: Training script not found: {script}")
+        raise typer.Exit(code=1)
+
+    # Ask the user for experiment settings.
+    qubits = typer.prompt("Number of qubits", type=int, default=2)
+    if not 2 <= qubits <= 6:
+        print("Error: Number of qubits must be between 2 and 6.")
+        raise typer.Exit(code=1)
+
+    mode = typer.prompt("Model mode (hybrid)", default="hybrid").lower()
+    if mode != "hybrid":
+        print("Error: Only hybrid mode is supported.")
+        raise typer.Exit(code=1)
+
+    shots = typer.prompt("Number of shots (0 for analytic mode)", type=int, default=0)
+    if shots < 0:
+        print("Error: Shots cannot be negative.")
+        raise typer.Exit(code=1)
+
+    encoding = typer.prompt("Encoding", default="angle").lower()
+    if encoding != "angle":
+        print("Error: Only angle encoding is supported.")
+        raise typer.Exit(code=1)
+
+    measurement = typer.prompt("Measurement", default="pauli-z").lower()
+    if measurement not in ("pauli-z", "pauliz"):
+        print("Error: Only Pauli-Z measurement is supported.")
+        raise typer.Exit(code=1)
+
+    # Run the experiment using the existing experiment.py file.
+    results = run_experiment(script=script, qubits=qubits,mode=mode, shots=shots, encoding=encoding, measurement="pauli-z", )
+
+    # Display the comparison.
+    print("\nExperiment results")
+    print("------------------")
+    print(f"Settings: {qubits} qubits, {mode} mode, {shots} shots")
+    print(f"Encoding: {encoding}")
+    print(f"Measurement: {measurement}")
+    print(f"Classical accuracy: {results['classical_accuracy']:.4f}")
+    print(f"Hybrid VQC accuracy: {results['hybrid_accuracy']:.4f}")
+    print(f"Classical runtime: {results['classical_runtime']:.2f} seconds")
+    print(f"Hybrid VQC runtime: {results['hybrid_runtime']:.2f} seconds")
+    print("\nQuantum circuit:")
+    print(results["circuit"])
+
+    # Save the results so the experiment can be repeated.
+    output_path = Path("results.json")
+    with output_path.open("w", encoding="utf-8") as file:
+        json.dump(results, file, indent=4, default=str)
+
+    print(f"\nResults saved to {output_path.resolve()}")
+
+
+if __name__ == "__main__":
+    app()
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
