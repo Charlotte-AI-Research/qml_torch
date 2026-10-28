@@ -6,9 +6,8 @@
 > **Why:** It gives the team a simple build order and prevents the first version
 > from becoming too large or confusing.
 
-For now, the project has only **five main tasks**. Complete them in order. Each
-task can be assigned to one person or a small group, and each checklist item can
-become a smaller GitHub issue later if needed.
+The project has five main tasks. They are now complete for v0.1; the checked list
+is kept as a handoff record for the team.
 
 The goal of version 0.1 is intentionally small:
 
@@ -78,13 +77,13 @@ clearly. Deep quantum knowledge is not required.
 
 ### To do
 
-- [ ] Confirm or edit the “Simple v0.1 defaults” above.
-- [ ] Replace the unclear word `Standard` with clear model choices. Recommended:
+- [x] Confirm or edit the “Simple v0.1 defaults” above.
+- [x] Replace the unclear word `Standard` with clear model choices. Recommended:
       `classical`, `hybrid-vqc`, and `both`.
-- [ ] Decide what the example `train.py` must provide. Keep it to one small,
+- [x] Decide what the example `train.py` must provide. Keep it to one small,
       documented function that returns training and test data.
-- [ ] Decide a safe qubit range for the first example, such as 2–6 qubits.
-- [ ] Update `docs/OPEN_QUESTIONS.md` with the final answers.
+- [x] Decide a safe qubit range for the first example, such as 2–6 qubits.
+- [x] Update `docs/OPEN_QUESTIONS.md` with the final answers.
 
 ### Finished when
 
@@ -103,15 +102,15 @@ QMLT-001 first.
 
 ### To do
 
-- [ ] Add `pyproject.toml` with only the packages needed for v0.1.
-- [ ] Add the `qml_torch` package and a `qml-torch` command entry point.
-- [ ] Add a small configuration object for qubits, encoding, mode, shots, and
+- [x] Add `pyproject.toml` with only the packages needed for v0.1.
+- [x] Add the `qml_torch` package and a `qml-torch` command entry point.
+- [x] Add a small configuration object for qubits, encoding, mode, shots, and
       measurement.
-- [ ] Add simple validation for missing packages and invalid settings.
-- [ ] Configure `pytest` and `ruff`.
-- [ ] Start every new Python file with a short module docstring explaining what
+- [x] Add simple validation for missing packages and invalid settings.
+- [x] Configure `pytest` and `ruff`.
+- [x] Start every new Python file with a short module docstring explaining what
       the file owns and why it exists.
-- [ ] Write setup commands that work in a clean virtual environment.
+- [x] Write setup commands that work in a clean virtual environment.
 
 ### Finished when
 
@@ -130,14 +129,14 @@ tutorial. Complete QMLT-002 first.
 
 ### To do
 
-- [X] Create a hidden PennyLane `default.qubit` simulator.
-- [X] Accept an input shaped `[batch, features]`.
-- [X] For v0.1, give a friendly error unless `features == qubits`.
-- [X] Encode features with angle encoding.
-- [X] Add one small trainable VQC ansatz chosen by the library.
-- [X] Measure Pauli-Z expectation on every qubit.
-- [X] Return `[batch, qubits]`, meaning one value per qubit for every sample.
-- [ ] Confirm a PyTorch optimizer can update the circuit parameters.
+- [x] Create a hidden PennyLane `default.qubit` simulator.
+- [x] Accept an input shaped `[batch, features]`.
+- [x] For v0.1, give a friendly error unless `features == qubits`.
+- [x] Encode features with angle encoding.
+- [x] Add one small trainable VQC ansatz chosen by the library.
+- [x] Measure Pauli-Z expectation on every qubit.
+- [x] Return `[batch, qubits]`, meaning one value per qubit for every sample.
+- [x] Confirm a PyTorch optimizer can update the circuit parameters.
 
 ### Finished when
 
@@ -156,16 +155,16 @@ QMLT-003 first.
 
 ### To do
 
-- [ ] Implement `qml-torch run train.py`.
-- [ ] Check the environment, training-script contract, and feature shape before
+- [x] Implement `qml-torch run train.py`.
+- [x] Check the environment, training-script contract, and feature shape before
       training starts.
-- [ ] Ask for qubits, model mode, shots, encoding, and measurement. In v0.1,
+- [x] Ask for qubits, model mode, shots, encoding, and measurement. In v0.1,
       encoding and measurement may each have only one supported choice.
-- [ ] Build one small classical model and one small hybrid VQC model.
-- [ ] Train both with the same data split, seed, epochs, and accuracy metric.
-- [ ] Print the quantum circuit, both accuracies, both runtimes, and the settings.
-- [ ] Save a small result file so the run can be repeated.
-- [ ] Make sure importing `qml_torch` does not automatically open the CLI.
+- [x] Build one small classical model and one small hybrid VQC model.
+- [x] Train both with the same data split, seed, epochs, and accuracy metric.
+- [x] Print the quantum circuit, both accuracies, both runtimes, and the settings.
+- [x] Save a small result file so the run can be repeated.
+- [x] Make sure importing `qml_torch` does not automatically open the CLI.
 
 ### Finished when
 
@@ -185,14 +184,14 @@ This person can start drafting the tutorial while earlier tasks are in progress.
 
 ### To do
 
-- [ ] Test configuration errors and the `features == qubits` rule.
-- [ ] Test the quantum layer's input/output shape and optimizer step.
-- [ ] Add one end-to-end test for `qml-torch run train.py`.
-- [ ] Write a short beginner tutorial using the included toy dataset.
-- [ ] Explain qubits, encoding, shots, measurement, and VQC in ML-friendly words.
-- [ ] Test the tutorial in a clean environment on a normal laptop.
-- [ ] Record approximate runtime and set safe default qubit/epoch limits.
-- [ ] Document known limitations and common setup errors.
+- [x] Test configuration errors and the `features == qubits` rule.
+- [x] Test the quantum layer's input/output shape and optimizer step.
+- [x] Add one end-to-end test for `qml-torch run train.py`.
+- [x] Write a short beginner tutorial using the included toy dataset.
+- [x] Explain qubits, encoding, shots, measurement, and VQC in ML-friendly words.
+- [x] Test the tutorial in a clean environment on a normal laptop.
+- [x] Record approximate runtime and set safe default qubit/epoch limits.
+- [x] Document known limitations and common setup errors.
 
 ### Finished when
 

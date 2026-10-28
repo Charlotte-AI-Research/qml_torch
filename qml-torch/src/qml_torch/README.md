@@ -6,9 +6,9 @@
 > **Why:** Keeping package code under `src/` avoids accidental imports from the
 > repository root and gives the library one clear public entry point.
 
-This will become the Python import package. It intentionally contains no
-`__init__.py` or implementation yet, so the planning scaffold cannot be mistaken
-for an installable library.
+This is the Python import package. Public exports are kept small so users can
+start with `ExperimentConfig` and `QuantumLayer` without learning internal
+backend or circuit objects.
 
 Public exports should remain small. Backend-specific objects and hidden circuit
 presets should not become accidental public API.

@@ -1,3 +1,5 @@
-from .quantum_layer import BasicQuantumLayer
+"""PyTorch-facing layers."""
 
-__all__ = ["BasicQuantumLayer"]
+from .quantum_layer import BasicQuantumLayer, QuantumLayer
+
+__all__ = ["BasicQuantumLayer", "QuantumLayer"]

@@ -6,4 +6,5 @@
 > **Why:** Fast focused tests identify simple mistakes without running a complete
 > quantum training experiment.
 
-Add fast, isolated tests here when the implementation tasks begin.
+This directory contains fast, isolated tests for configuration, data validation,
+circuits, and shape rules.

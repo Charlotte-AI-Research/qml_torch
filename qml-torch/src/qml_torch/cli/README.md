@@ -1,11 +1,12 @@
 # CLI
 
-> **What:** This directory will implement commands such as
+> **What:** This directory implements commands such as
 > `qml-torch run train.py` and display prompts and results.
 >
 > **Why:** A guided CLI is the main beginner experience and keeps setup choices
 > out of the user's Python model code.
 
-Future home of commands, flags, guided prompts, terminal rendering, and exit-code
-behavior. It should translate user answers into typed configuration and delegate
-validation/training rather than implement quantum logic.
+The implementation provides `qml-torch run train.py`, guided prompts, flags,
+terminal rendering, and useful exit codes. It translates user answers into typed
+configuration and delegates validation/training rather than implementing quantum
+logic.

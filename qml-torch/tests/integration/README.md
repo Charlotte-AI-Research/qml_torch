@@ -6,4 +6,4 @@
 > **Why:** Gradients and optimizer updates cross library boundaries and therefore
 > need more than isolated unit tests.
 
-Add PennyLane/PyTorch boundary, gradient, and optimizer tests here.
+This directory contains PennyLane/PyTorch boundary, gradient, and optimizer tests.

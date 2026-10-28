@@ -10,4 +10,5 @@
 - `integration/`: PennyLane/PyTorch execution, gradients, and training components
 - `e2e/`: CLI preflight, guided-equivalent runs, reports, and failure behavior
 
-No tests exist yet because implementation has not started.
+The v0.1 implementation includes unit, integration, and end-to-end smoke tests in
+these directories.

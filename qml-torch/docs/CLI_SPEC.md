@@ -1,6 +1,6 @@
 # CLI experience specification
 
-> **What:** This file defines what the future `qml-torch` command should ask,
+> **What:** This file defines what the `qml-torch` command asks,
 > validate, display, save, and return.
 >
 > **Why:** It keeps the command-line experience predictable and beginner-friendly
@@ -12,25 +12,23 @@
 qml-torch run train.py
 ```
 
-This command is the planned beginner path. It first checks the environment and the
+This command is the beginner path. It first checks the environment and the
 documented user-script contract. If preflight passes, it opens a guided prompt.
 Importing `qml_torch` alone never opens this interface.
 
 ## Prompt order
 
 1. **Qubits** — positive integer inside the supported v0.1 range.
-2. **Mode/circuit type** — final labels depend on resolving `Standard` in
-   `OPEN_QUESTIONS.md`.
+2. **Mode/circuit type** — choose `classical`, `hybrid-vqc`, or `both`.
 3. **Encoding** — only implemented, compatible choices are shown.
-4. **Shots** — analytic mode or a supported positive integer.
-5. **Measurement** — only measurements that preserve the one-value-per-qubit
+4. **Measurement** — only measurements that preserve the one-value-per-qubit
    contract are shown.
-6. **Confirm plan** — show resolved defaults, estimated workload, and output path.
+5. **Shots** — analytic mode or a supported positive integer.
 
 Backend, ansatz, differentiation method, and internal weight shapes are not
 beginner prompts. They remain visible later in the saved report.
 
-## Example session (illustrative, not implemented)
+## Example session
 
 ```text
 $ qml-torch run train.py
@@ -41,12 +39,12 @@ $ qml-torch run train.py
 Qubits [4]: 4
 Mode [both]: both
 Encoding [angle]: angle
-Shots [analytic]: 100
 Measurement [z-expectation]: z-expectation
+Shots [analytic]: 100
 
+✓ Input shape and configuration check
 Plan: classical baseline + 4-qubit hybrid model
 Estimated workload: small CPU simulation
-Continue? [Y/n]
 ```
 
 ## Non-interactive equivalent

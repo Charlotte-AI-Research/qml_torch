@@ -21,4 +21,10 @@ jobs:
       - name: Types
         run: mypy src
       - name: Tests
-        run: pytest -q
+        run: pytest -q tests
+      - name: Nested qml-torch package
+        run: |
+          pip install -e "qml-torch[dev]"
+          cd qml-torch
+          ruff check src tests
+          pytest -q

@@ -1,12 +1,12 @@
-# Contributing to the planned project
+# Contributing to the project
 
 > **What:** This file explains how team members should prepare and submit changes.
 >
 > **Why:** Shared contribution rules keep changes small, reviewable, tested, and
 > inside the agreed first-version scope.
 
-Implementation has not started in this nested scaffold. Begin with the earliest
-unblocked item in `TASKS.md` and keep each change small enough to review.
+The v0.1 implementation is complete. Begin with a focused follow-up item in
+`TASKS.md` and keep each change small enough to review.
 
 Before opening implementation work:
 
@@ -16,6 +16,6 @@ Before opening implementation work:
 4. Update the relevant product/API documentation.
 5. Avoid adding Qiskit, TensorFlow, hardware, or expert controls to v0.1 work.
 
-A future pull request should pass the formatter, linter, type checker, and tests
-defined by QMLT-002. Quantum-result claims must include the comparison protocol,
+A pull request should pass Ruff and pytest. Quantum-result claims must include the
+comparison protocol,
 multiple seeds where appropriate, runtime, and limitations.

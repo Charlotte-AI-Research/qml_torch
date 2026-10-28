@@ -6,4 +6,4 @@
 > **Why:** It proves that all parts work together in the same way a beginner will
 > actually use the project.
 
-Add CLI-to-report smoke tests and expected-failure journeys here.
+This directory contains CLI-to-report smoke tests and expected-failure journeys.

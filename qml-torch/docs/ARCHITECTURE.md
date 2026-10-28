@@ -6,8 +6,9 @@
 > **Why:** Clear boundaries prevent CLI, PyTorch, PennyLane, training, and reports
 > from becoming one large file that is difficult to test or replace.
 
-This document defines boundaries, not implementations. The folder intentionally
-contains no Python modules yet.
+This document defines the boundaries used by the v0.1 implementation. The source
+modules are intentionally small so a beginner can follow the path from CLI input
+to a saved report.
 
 ## System flow
 
@@ -51,8 +52,8 @@ classical model   PyTorch QuantumLayer
 - Gradients must reach registered circuit parameters in supported analytic modes.
 - Finite-shot gradients and randomness must be documented per supported method.
 
-The feature-to-qubit adaptation rule is intentionally pending QMLT-001. Whatever
-is chosen must never silently drop features and must appear in the run report.
+For v0.1, the layer requires `features == qubits`. This is validated before
+training and recorded in the report; automatic feature compression is deferred.
 
 ### Compiled experiment plan
 
@@ -97,8 +98,7 @@ cli -> training -> nn -> backends
 training -> reporting
 ```
 
-Exact cycles and framework constraints must be checked when QMLT-002 adds import
-tests.
+Import boundaries are checked by the package tests and Ruff during development.
 
 ## Safety and reproducibility
 

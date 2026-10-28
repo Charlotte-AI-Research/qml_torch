@@ -1,3 +1,5 @@
-from ._basic_circuit import basic_circuit
+"""Ready-made circuit presets."""
 
-__all__=["basic_circuit"]
+from ._basic_circuit import basic_circuit, basic_qnode
+
+__all__ = ["basic_circuit", "basic_qnode"]

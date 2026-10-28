@@ -5,24 +5,34 @@
 > **Why:** It helps a new contributor understand the idea, boundaries, and folder
 > layout before opening the more detailed files.
 
-QML Torch is planned as a beginner-friendly PyTorch extension for prototyping
+QML Torch is a beginner-friendly PyTorch extension for prototyping
 hybrid quantum machine-learning models. A user should be able to bring ordinary
 PyTorch training code, run a guided command, choose a few understandable quantum
 options, and receive both a classical baseline and a hybrid/QML result.
 
-> **Status:** planning and file structure only. Nothing inside this folder is an
-> installable or working library yet. Implementation work is listed in
-> [TASKS.md](TASKS.md).
+> **Status:** v0.1 implementation complete. The package, quantum layer, guided
+> CLI, comparison runner, reports, examples, and tests are now wired together.
+> Follow-up features remain intentionally outside the first release.
 
 ## Intended first experience
 
-The planned command is:
+The v0.1 command is:
 
 ```text
 qml-torch run train.py
 ```
 
-It should:
+From a fresh checkout, install and run the included example with:
+
+```bash
+cd qml-torch
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+qml-torch run examples/train.py
+```
+
+It:
 
 1. preflight-check the user's script, data shapes, and environment;
 2. ask only for the supported user-facing quantum options;
@@ -31,7 +41,7 @@ It should:
 5. show the circuit, metrics, runtime, configuration, and useful warnings.
 
 Importing `qml_torch` will not launch a prompt. The guided interface begins only
-when the user invokes the CLI or an explicit future Python entry point. This keeps
+when the user invokes the CLI. This keeps
 imports predictable in notebooks, tests, and other packages.
 
 ## Configuration boundary
@@ -84,8 +94,9 @@ qml-torch/
     └── unit/
 ```
 
-Each empty implementation area contains a short README defining its future
-responsibility. No Python implementation files have been added yet.
+Each implementation area contains a short README defining its responsibility.
+Python source lives under `src/qml_torch`; the READMEs explain the boundaries for
+new contributors.
 
 ## v0.1 success criteria
 

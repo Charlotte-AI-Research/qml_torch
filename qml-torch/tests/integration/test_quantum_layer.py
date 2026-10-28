@@ -30,9 +30,9 @@ def test_accepts_lowercase_encoding_gate():
 @pytest.mark.parametrize(
     "inputs",
     [
-        torch.randn(3),       # Wrong number of features
-        torch.randn(4, 3),    # Batch with wrong number of features
-        torch.randn(2, 4, 2), # Unsupported number of dimensions
+        torch.randn(3),  # Wrong number of features
+        torch.randn(4, 3),  # Batch with wrong number of features
+        torch.randn(2, 4, 2),  # Unsupported number of dimensions
     ],
 )
 def test_rejects_invalid_input_shape(inputs):
@@ -79,7 +79,6 @@ def test_quantum_layer_optimizer_step():
 
     optimizer.step()
 
-    assert any(
-        not torch.allclose(old, new.detach())
-        for old, new in zip(before, parameters)
-    ), "Expected the optimizer to update at least one parameter"
+    assert any(not torch.allclose(old, new.detach()) for old, new in zip(before, parameters)), (
+        "Expected the optimizer to update at least one parameter"
+    )
