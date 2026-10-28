@@ -82,3 +82,15 @@ def test_quantum_layer_optimizer_step():
     assert any(not torch.allclose(old, new.detach()) for old, new in zip(before, parameters)), (
         "Expected the optimizer to update at least one parameter"
     )
+
+
+def test_sampled_batch_gradients_reach_upstream_layer():
+    upstream = torch.nn.Linear(2, 2)
+    quantum = BasicQuantumLayer(2, shots=100, seed=7)
+    inputs = upstream(torch.tensor([[0.4, 0.7], [0.2, 0.5]]))
+    outputs = quantum(inputs)
+    assert outputs.shape == (2, 2)
+    outputs.sum().backward()
+    assert upstream.weight.grad is not None
+    assert torch.isfinite(upstream.weight.grad).all()
+    assert upstream.weight.grad.abs().sum() > 0

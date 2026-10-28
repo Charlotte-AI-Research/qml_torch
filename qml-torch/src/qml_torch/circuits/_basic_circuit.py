@@ -12,6 +12,7 @@ def basic_qnode(
     encoding_gate: str = "Y",
     layers: int = 1,
     shots: int | None = None,
+    seed: int | None = None,
 ):
     """Build the internal QNode without exposing device configuration to users."""
 
@@ -20,7 +21,7 @@ def basic_qnode(
     if layers < 1:
         raise ValueError("layers must be at least 1")
     qml = require_pennylane()
-    dev = build_device(qubits, shots=shots)
+    dev = build_device(qubits, shots=shots, seed=seed)
     diff_method = "backprop" if shots is None else "parameter-shift"
 
     def circuit(inputs, weights):
@@ -48,10 +49,11 @@ def basic_circuit(
     encoding_gate: str = "Y",
     layers: int = 1,
     shots: int | None = None,
+    seed: int | None = None,
 ):
     """Return PennyLane's TorchLayer for the standard v0.1 circuit."""
 
     qml = require_pennylane()
-    qnode = basic_qnode(qubits, encoding_gate, layers, shots)
+    qnode = basic_qnode(qubits, encoding_gate, layers, shots, seed)
     weight_shapes = {"weights": (layers, qubits, 3)}
     return qml.qnn.TorchLayer(qnode, weight_shapes)

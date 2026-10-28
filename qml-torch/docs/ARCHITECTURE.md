@@ -1,116 +1,68 @@
-# Planned architecture
+# Architecture
 
-> **What:** This file shows how the future parts of the library connect and what
-> each part is responsible for.
+> **What:** How the shipped alpha's modules fit together.
 >
-> **Why:** Clear boundaries prevent CLI, PyTorch, PennyLane, training, and reports
-> from becoming one large file that is difficult to test or replace.
-
-This document defines the boundaries used by the v0.1 implementation. The source
-modules are intentionally small so a beginner can follow the path from CLI input
-to a saved report.
-
-## System flow
+> **Why:** Each module owns one part of the experiment so changes can be tested.
 
 ```text
-CLI or explicit Python API
-          |
-          v
-typed user configuration
-          |
-          v
-preflight validator/compiler ---> actionable diagnostics
-          |
-          v
-compiled experiment plan
-     |                |
-     v                v
-classical model   PyTorch QuantumLayer
-                       |
-                 feature adapter
-                       |
-              encoding + hidden preset
-                       |
-             PennyLane backend adapter
-                       |
-                 measurement values
-     |                |
-     +------ trainer -+
+CLI (run / demo / doctor / init)
               |
-              v
-     circuit + comparison report
+      config + validation
+              |
+       shared training loop
+       /                  \
+linear baseline       PyTorch QuantumLayer
+                           |
+              angle encoding + hidden circuit
+                           |
+              seeded PennyLane default.qubit
+                           |
+                 Pauli-Z expectations
+       \                  /
+        metrics + circuit + provenance
+                     |
+           JSON + offline HTML report
 ```
 
-## Stable contracts
+## Boundaries
 
-### Quantum layer
+- `config/`: frozen settings, strict counts, serialization, and typo detection.
+- `validation/`: trusted-script loading, real CPU tensors, shape and label checks.
+- `backends/`: simulator construction and explicit random seed.
+- `encodings/`: one angle per feature/qubit.
+- `circuits/`: the versioned RY/RZ/RY plus CNOT-ring preset and QNode wiring.
+- `measurements/`: one Pauli-Z expectation value per qubit.
+- `nn/`: trainable parameters, batching, input checks, and PyTorch gradients.
+- `training/`: shared full-batch Adam loop, held-out metrics, and bundled demo.
+- `reporting/`: terminal tables, escaped offline HTML, and atomic artifact writes.
+- `cli/`: beginner commands and progress; no circuit mathematics.
 
-- Primary input: floating tensor shaped `[batch, features]`.
-- Convenience input: `[features]`, with explicitly documented output behavior.
-- Primary output: floating tensor shaped `[batch, qubits]`.
-- Each output column is the selected measurement for one qubit.
-- Gradients must reach registered circuit parameters in supported analytic modes.
-- Finite-shot gradients and randomness must be documented per supported method.
+## Contracts
 
-For v0.1, the layer requires `features == qubits`. This is validated before
-training and recorded in the report; automatic feature compression is deferred.
+Features: `[batch, features]`, with `features == qubits` for quantum execution.
+The layer also accepts `[qubits]`. Outputs preserve batch shape and have one
+value per qubit. Analytic mode uses backpropagation; finite shots use
+parameter-shift and a sample loop to support gradients to upstream layers.
 
-### Compiled experiment plan
+Data loading converts real dense tensors to CPU float32. It never automatically
+scales or projects features. Labels are binary and evaluated before conversion
+so malformed values cannot silently become valid ones.
 
-The compiler converts user choices and the user-script contract into an immutable,
-serializable plan. It contains resolved defaults, hidden preset identity, tensor
-contracts, backend capabilities, seed policy, and estimated workload. Training
-consumes a plan rather than rebuilding quantum choices ad hoc.
+## Reproducibility
 
-### Backend adapter
+Experiments temporarily seed and restore Python, NumPy, and CPU Torch random
+streams. Each sampled device has its own seed. Reports identify exact tensors
+with SHA-256 and record environment versions and hidden circuit choices.
 
-Only `backends/` may construct PennyLane devices or handle backend-specific QNode
-details. Circuits describe operations; the PyTorch layer consumes a compiled
-callable. This boundary makes a later Qiskit adapter possible without promising it
-for v0.1.
+Results are repeatable for the tested environment and operation sequence. A
+saved configuration alone cannot reproduce changes in a user's external data.
 
-## Module responsibilities
+## Reports
 
-| Area | Owns | Must not own |
-| --- | --- | --- |
-| `config` | typed choices, defaults, serialization | prompting or devices |
-| `validation` | preflight checks and compiled plans | training loops |
-| `cli` | commands, prompts, flags, presentation | quantum math |
-| `encodings` | feature-to-operation strategies | data loading |
-| `circuits` | hidden/versioned circuit presets | CLI concerns |
-| `measurements` | measurement builders and output metadata | metrics |
-| `backends` | PennyLane device/QNode integration | product defaults |
-| `nn` | PyTorch modules and tensor contracts | datasets or CLI |
-| `training` | fair training/comparison protocol | circuit construction |
-| `reporting` | diagrams, metrics, configs, provenance | model optimization |
+Existing alpha-1 result keys remain present. Schema 2 adds histories, metrics,
+model sizes, provenance, warnings, and status. Writes use a temporary file plus
+atomic replacement. HTML is escaped, has no external dependencies, and supports
+narrow screens and printing.
 
-## Dependency direction
-
-Higher-level orchestration may depend on lower-level quantum pieces, but the
-quantum pieces must not import the CLI or trainers. A proposed direction is:
-
-```text
-cli -> validation -> config
-cli -> training -> nn -> backends
-                    |      |
-                    v      v
-              circuits/encodings/measurements
-training -> reporting
-```
-
-Import boundaries are checked by the package tests and Ruff during development.
-
-## Safety and reproducibility
-
-- Treat executed user training scripts as trusted code; say this clearly.
-- Avoid executing the script during checks that can be static.
-- Validate workload before starting a potentially slow simulation.
-- Record versions, seed, shots, hidden preset, adapter policy, and resolved config.
-- Write incomplete/failed status distinctly from successful result artifacts.
-
-## Extension seams
-
-Qiskit should be added through the backend contract, not conditionals scattered
-through the code. TensorFlow requires a frontend/layer contract and should not
-alter PyTorch semantics. Expert configuration should be an additive interface;
-beginner defaults remain versioned and reproducible.
+The linear baseline and quantum model share the training protocol but have
+different parameter counts; reports explicitly describe this limitation.

@@ -24,9 +24,15 @@ class ClassicalModel(nn.Module):
 class HybridVQCModel(nn.Module):
     """A quantum layer followed by a small classical output layer."""
 
-    def __init__(self, n_qubits: int, shots: int | None = None, layers: int = 1) -> None:
+    def __init__(
+        self,
+        n_qubits: int,
+        shots: int | None = None,
+        layers: int = 1,
+        seed: int | None = None,
+    ) -> None:
         super().__init__()
-        self.quantum = QuantumLayer(n_qubits, layers=layers, shots=shots)
+        self.quantum = QuantumLayer(n_qubits, layers=layers, shots=shots, seed=seed)
         self.output = nn.Linear(n_qubits, 1)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:

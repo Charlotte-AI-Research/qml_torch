@@ -1,120 +1,156 @@
-# QML Torch — project scaffold
+# QML Torch
+### From features to qubits.
 
-> **What:** This is the starting page and map for the whole QML Torch project.
+> **What:** A small PyTorch extension that makes a first quantum ML experiment
+> approachable.
 >
-> **Why:** It helps a new contributor understand the idea, boundaries, and folder
-> layout before opening the more detailed files.
+> **Why:** You should be able to try a quantum layer without first learning how
+> to construct a device, QNode, or ansatz.
 
-QML Torch is a beginner-friendly PyTorch extension for prototyping
-hybrid quantum machine-learning models. A user should be able to bring ordinary
-PyTorch training code, run a guided command, choose a few understandable quantum
-options, and receive both a classical baseline and a hybrid/QML result.
+**0.1.0a2 · Educational alpha · Python 3.11+ · PennyLane + PyTorch**
 
-> **Status:** `0.1.0a1` alpha release. The package, quantum layer, guided CLI,
-> comparison runner, reports, examples, and tests are wired together. The alpha
-> is intended for educational use and feedback, not production workloads.
+Run a comparison, watch both models train, and open a complete experiment report
+in your browser. The library handles the circuit and simulator setup.
 
-## Intended first experience
+## Try it
 
-The v0.1 command is:
+From the **repository root** (the folder containing the inner `qml-torch/` directory):
 
-```text
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e "./qml-torch[dev]"
+qml-torch doctor
+qml-torch demo
+```
+
+Windows activation: `.venv\Scripts\activate`.
+
+The demo includes balanced synthetic training/test data and needs no download.
+It saves `qml-demo.json` and `qml-demo.html` in your current directory. Open the
+HTML file in a browser; the report works offline.
+
+The PyPI distribution is named `qml-torch`; the Python import is `qml_torch`.
+After alpha 2 is published, `python -m pip install qml-torch==0.1.0a2` will install it.
+Until then, use the source installation above.
+
+## Your first model comparison
+
+```bash
+qml-torch init train.py
 qml-torch run train.py
 ```
 
-From a fresh checkout, install and run the included example with:
+The wizard checks your script, infers a qubit default from the feature count, and
+asks about qubits, model mode, encoding, measurement, and shots. Backend and
+ansatz choices stay inside the library.
+
+For an unattended run:
 
 ```bash
-cd qml-torch
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[dev]"
-qml-torch run examples/train.py
+qml-torch run train.py --no-prompt --epochs 20 --seed 7 --output results.json
 ```
 
-It:
+Supported model modes: `classical`, `hybrid-vqc`, and `both`.
 
-1. preflight-check the user's script, data shapes, and environment;
-2. ask only for the supported user-facing quantum options;
-3. build safe defaults for the hidden quantum details;
-4. train a classical baseline and a hybrid variational quantum circuit (VQC);
-5. show the circuit, metrics, runtime, configuration, and useful warnings.
+## What you get
 
-Importing `qml_torch` will not launch a prompt. The guided interface begins only
-when the user invokes the CLI. This keeps
-imports predictable in notebooks, tests, and other packages.
+- A terminal comparison of test accuracy, F1, trainable parameters, and runtime.
+- An offline HTML dashboard with learning curves, confusion matrices, circuit
+  gates, settings, and dependency versions.
+- Machine-readable JSON with loss history, precision, recall, test loss, data
+  fingerprint, seed, and the hidden circuit preset.
+- Explicit `running`, `completed`, `failed`, or `cancelled` status for training
+  artifacts. Writes are atomic per file.
 
-## Configuration boundary
+Repeat a run from its saved settings:
 
-| User chooses | Hidden in v0.1 |
+```bash
+qml-torch run train.py --config results.json --output repeated.json
+qml-torch demo --config qml-demo.json --output demo-repeated.json
+```
+
+Flags override saved settings. Dataset fingerprints let you check that a repeated
+run actually used the same data. A user script must also be deterministic; a seed
+does not control external files or network data.
+
+## Use it inside PyTorch
+
+```python
+import torch
+from qml_torch import QuantumLayer
+
+model = torch.nn.Sequential(
+    QuantumLayer(qubits=2),
+    torch.nn.Linear(2, 1),
+)
+logits = model(torch.rand(8, 2))
+loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, torch.ones(8, 1))
+loss.backward()
+```
+
+The layer maps `[batch, qubits]` to `[batch, qubits]` and also accepts a single
+sample shaped `[qubits]`. It returns one Pauli-Z expectation per qubit. Quantum
+weights appear in `model.parameters()` and `state_dict()`.
+
+## Bring your own data
+
+A trusted Python script must define:
+
+```python
+def get_data():
+    return x_train, y_train, x_test, y_test
+```
+
+All four values are real PyTorch tensors. Features use `[samples, features]`,
+labels use `[samples]` or `[samples, 1]`, and labels must be 0 or 1. Hybrid runs
+require one feature per qubit. The tool converts tensors to CPU float32 and does
+not silently scale, truncate, or project features. Angle inputs are radians.
+
+## Honest comparisons
+
+The models share data, epochs, learning rate, and seed. The baseline is a linear
+logistic classifier; the hybrid adds a VQC and a linear readout. They are **not
+parameter-matched**: the report shows their sizes. One tiny test split or one seed
+cannot establish quantum advantage.
+
+Analytic simulation is the default. To sample measurements:
+
+```bash
+qml-torch demo --shots 100 --epochs 3 --output sampled.json
+```
+
+Sampled runs use parameter-shift gradients and can be much slower. Reproducibility
+is tested for identical seeds, tensors, simulator operations, and dependency
+versions. It is not promised across platforms or dependency upgrades.
+
+## Commands
+
+| Command | Purpose |
 | --- | --- |
-| Qubit count | PennyLane device selection |
-| Encoding | Exact ansatz/gate layout |
-| Circuit/model mode | Backend wiring and differentiation method |
-| Shots (including analytic mode) | Weight shapes and QNode construction |
-| Measurement | Reproducibility and batching plumbing |
+| `qml-torch demo` | Run the included comparison immediately |
+| `qml-torch init train.py` | Create an editable starter script without overwriting files |
+| `qml-torch run train.py` | Guided experiment with your data |
+| `qml-torch doctor` | Check versions and a quantum forward/backward pass |
+| `qml-torch version` | Show the installed alpha version |
 
-The first backend is PennyLane and the first host framework is PyTorch. Qiskit and
-TensorFlow are later extensions, not v0.1 requirements.
+Use `--no-html` for JSON only and `--debug` for troubleshooting tracebacks.
 
-## Naming
+## Limits and development
 
-- Distribution and CLI name: `qml-torch`
-- Python import name: `qml_torch`
+The CLI supports 2–6 qubits, binary classification, angle encoding, Pauli-Z
+measurement, CPU execution, and one versioned circuit preset. PennyLane 0.45.x
+is the tested backend series. Qiskit, TensorFlow, hardware, large datasets, and
+custom circuits remain future work.
 
-Python module names cannot contain hyphens, so the two forms are intentionally
-different.
+From the inner `qml-torch/` directory:
 
-## Planned layout
-
-```text
-qml-torch/
-├── TASKS.md
-├── benchmarks/
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── CLI_SPEC.md
-│   ├── OPEN_QUESTIONS.md
-│   └── PRODUCT_SPEC.md
-├── examples/
-├── src/qml_torch/
-│   ├── backends/
-│   ├── circuits/
-│   ├── cli/
-│   ├── config/
-│   ├── encodings/
-│   ├── measurements/
-│   ├── nn/
-│   ├── reporting/
-│   ├── training/
-│   └── validation/
-└── tests/
-    ├── e2e/
-    ├── integration/
-    └── unit/
+```bash
+ruff check src tests
+pytest -q
+python -m build
 ```
 
-Each implementation area contains a short README defining its responsibility.
-Python source lives under `src/qml_torch`; the READMEs explain the boundaries for
-new contributors.
-
-## v0.1 success criteria
-
-- A beginner can complete one small binary-classification experiment on a CPU
-  simulator without selecting a backend or writing a quantum circuit.
-- The quantum layer accepts batched classical features and returns one value per
-  qubit for each sample.
-- Preflight validation catches unsupported shapes and invalid choices before a
-  long training run.
-- The result reports a fair classical baseline next to the hybrid result without
-  claiming quantum advantage.
-- The same seed and configuration reproduce the experiment within documented
-  simulator tolerances.
-
-## Deliberate non-goals for v0.1
-
-- Qiskit, TensorFlow, quantum hardware, or distributed training
-- automatic support for arbitrary user training scripts
-- a user-defined ansatz builder
-- claims that a quantum model is faster or more accurate
-- large datasets or production-scale benchmarking
+See [the tutorial](examples/README.md), [architecture](docs/ARCHITECTURE.md),
+[release instructions](docs/RELEASING.md), [changelog](CHANGELOG.md), and
+[MIT license](LICENSE). Every source module begins with a short purpose docstring.

@@ -20,7 +20,7 @@ You do **not** need a quantum computer or a GPU. A normal laptop is enough.
 
 ### Tools
 
-- Python 3.11 is the recommended starting version.
+- Python 3.11 or newer is required for alpha 2.
 - Git and GitHub for sharing work.
 - A Python virtual environment (`venv`).
 - A code editor such as VS Code.

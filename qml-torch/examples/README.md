@@ -1,60 +1,83 @@
-# Examples
+# First quantum experiment
 
-> **What:** This directory contains small runnable examples and the beginner
-> tutorial.
+> **What:** A short path from installation to a repeatable experiment.
 >
-> **Why:** Users learn the public API faster from a complete, working example than
-> from internal source code alone.
+> **Why:** You can learn the interface before writing a quantum circuit.
 
-This folder contains the first small binary-classification script. Future examples
-must use only supported public interfaces and remain cheap enough to run on a
-laptop.
+## 1. Run the demo
 
-## Run the first example
-
-From the `qml-torch/` directory:
+From the repository root, install the inner package:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
-python -m pip install -e ".[dev]"
-qml-torch run examples/train.py
+python -m pip install -e "./qml-torch[dev]"
+qml-torch doctor
+qml-torch demo
 ```
 
-The command asks for qubits, model mode, encoding, measurement, and shots. For a
-quick non-interactive run, use:
+Open `qml-demo.html` in a browser. The dashboard shows accuracy, F1, runtime,
+parameter counts, loss curves, confusion matrices, and the circuit used.
+
+The demo is a tiny synthetic dataset. Good performance here is a demonstration
+of the workflow, not a general performance claim.
+
+## 2. Understand the five choices
+
+- **Qubits:** the number of quantum inputs and outputs; match this to your features.
+- **Mode:** run a classical model, a hybrid VQC, or both.
+- **Encoding:** turns feature values into gate angles. Alpha 2 supports angle encoding.
+- **Measurement:** converts the final quantum state into numbers. Pauli-Z gives one
+  value per qubit, between -1 and 1.
+- **Shots:** 0 means analytic expectations. A positive count samples the circuit,
+  adding noise and usually more runtime.
+
+A **VQC** is a quantum circuit with trainable rotation angles. A classical
+optimizer updates them just as it updates neural network weights.
+
+## 3. Bring your own features
 
 ```bash
-qml-torch run examples/train.py --no-prompt --epochs 10
+qml-torch init train.py
+qml-torch run train.py
 ```
 
-## Training-script contract
-
-Your script must define `get_data()` and return four PyTorch tensors in this order:
+The created script defines `get_data()`, returning:
 
 ```python
-x_train, y_train, x_test, y_test
+return x_train, y_train, x_test, y_test
 ```
 
-Feature tensors have shape `[samples, features]`. Labels are binary (`0` or `1`).
-For a hybrid run, the number of features must equal the selected number of qubits
-in v0.1.
+Return real PyTorch tensors: feature matrices `[samples, features]` and binary
+label vectors `[samples]` or `[samples, 1]`. The tool converts them to CPU
+float32; preprocessing is your responsibility. If scaling is needed, fit it to
+training data only, then apply it unchanged to test data.
 
-## What the output means
+You can also use the checked-in example from the inner package directory:
 
-- **Classical accuracy:** the linear PyTorch baseline on the test set.
-- **Hybrid VQC accuracy:** a trainable quantum layer followed by a linear output.
-- **Shots:** `analytic` uses exact simulator expectations; a positive number uses
-  sampled measurements.
-- **Circuit:** the hidden library circuit used for the hybrid model.
+```bash
+qml-torch run examples/train.py --no-prompt --epochs 20
+```
 
-The saved JSON report contains the settings, data shape, metrics, runtime, circuit,
-and the warning that this is an experimental comparison—not a quantum-advantage
-claim.
+## 4. Repeat and inspect
 
-## Common fixes
+```bash
+qml-torch run train.py --config results.json --output repeated.json
+```
 
-- If the feature count does not match qubits, choose the same number or use
-  `--mode classical`.
-- If `get_data()` is missing, add it with the four-tensor return value above.
-- If training is slow, use fewer epochs, analytic shots, or fewer qubits.
+Compare the saved data fingerprints and settings. Runtimes naturally vary.
+The HTML details include the environment and hidden circuit preset.
+
+Loss curves use training data only; test metrics are computed after training.
+F1 combines precision and recall, useful when accuracy hides class imbalance.
+The confusion matrix shows actual labels on rows and predicted labels on columns.
+
+The baseline is a linear classifier with fewer parameters than the VQC. These
+are workflow comparisons, not parameter-matched research benchmarks.
+
+## Troubleshooting
+
+- No command: activate the environment used to install `qml-torch`.
+- Wrong feature count: choose matching qubits (2–6) or classical mode.
+- Invalid labels: use 0 and 1.
+- Slow run: use analytic shots, fewer samples, or fewer epochs.
+- Need details: add `--debug`; use `qml-torch doctor` to check the environment.
+- Saved only JSON: remove `--no-html` to produce the dashboard.

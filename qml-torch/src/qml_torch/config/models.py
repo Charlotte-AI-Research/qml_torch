@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isfinite
 from typing import Any, Literal
 
 VALID_MODES = ("classical", "hybrid-vqc", "both")
@@ -12,6 +13,13 @@ VALID_MEASUREMENTS = ("pauli-z",)
 Mode = Literal["classical", "hybrid-vqc", "both"]
 Encoding = Literal["angle"]
 Measurement = Literal["pauli-z"]
+
+
+def positive_integer(value: Any, name: str) -> None:
+    """Reject booleans, fractions, and nonpositive counts before simulation."""
+
+    if type(value) is not int or value < 1:
+        raise ValueError(f"{name} must be a positive integer")
 
 
 @dataclass(frozen=True)
@@ -29,6 +37,8 @@ class ExperimentConfig:
     layers: int = 1
 
     def __post_init__(self) -> None:
+        for name in ("n_qubits", "epochs", "layers"):
+            positive_integer(getattr(self, name), name)
         if not 2 <= self.n_qubits <= 6:
             raise ValueError("n_qubits must be between 2 and 6 for the v0.1 simulator")
         if self.mode not in VALID_MODES:
@@ -37,14 +47,17 @@ class ExperimentConfig:
             raise ValueError("only 'angle' encoding is supported in v0.1")
         if self.measurement not in VALID_MEASUREMENTS:
             raise ValueError("only 'pauli-z' measurement is supported in v0.1")
-        if self.shots is not None and self.shots < 1:
-            raise ValueError("shots must be None (analytic mode) or a positive integer")
-        if self.epochs < 1:
-            raise ValueError("epochs must be at least 1")
-        if self.learning_rate <= 0:
-            raise ValueError("learning_rate must be positive")
-        if self.layers < 1:
-            raise ValueError("layers must be at least 1")
+        if self.shots is not None:
+            positive_integer(self.shots, "shots")
+        if (
+            isinstance(self.learning_rate, bool)
+            or not isinstance(self.learning_rate, (int, float))
+            or not isfinite(self.learning_rate)
+            or self.learning_rate <= 0
+        ):
+            raise ValueError("learning_rate must be a finite positive number")
+        if type(self.seed) is not int or not 0 <= self.seed < 2**32:
+            raise ValueError("seed must be an integer between 0 and 4294967295")
 
     def to_dict(self) -> dict[str, Any]:
         """Return JSON-friendly settings."""
@@ -55,5 +68,7 @@ class ExperimentConfig:
     def from_dict(cls, values: dict[str, Any]) -> ExperimentConfig:
         """Build settings from a JSON/config dictionary."""
 
-        allowed = {field for field in cls.__dataclass_fields__}
-        return cls(**{key: value for key, value in values.items() if key in allowed})
+        unknown = values.keys() - cls.__dataclass_fields__.keys()
+        if unknown:
+            raise ValueError(f"unknown configuration field(s): {', '.join(sorted(unknown))}")
+        return cls(**values)

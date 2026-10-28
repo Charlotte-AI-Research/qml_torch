@@ -1,0 +1,5 @@
+# Include the tutorial and release notes in source downloads.
+include LICENSE CHANGELOG.md CONTRIBUTING.md
+recursive-include docs *.md
+recursive-include examples *.py *.md
+recursive-include tests *.py *.md

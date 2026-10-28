@@ -18,7 +18,7 @@ def require_pennylane() -> Any:
     return qml
 
 
-def build_device(n_qubits: int, shots: int | None = None) -> Any:
+def build_device(n_qubits: int, shots: int | None = None, seed: int | None = None) -> Any:
     """Build the hidden local simulator used by the first release."""
 
     if n_qubits < 1:
@@ -27,4 +27,4 @@ def build_device(n_qubits: int, shots: int | None = None) -> Any:
     # Shots belong to the QNode in current PennyLane releases. Keeping this
     # device analytic also avoids the device-level deprecation warning while
     # retaining compatibility with older PennyLane versions.
-    return qml.device("default.qubit", wires=n_qubits)
+    return qml.device("default.qubit", wires=n_qubits, seed=seed)

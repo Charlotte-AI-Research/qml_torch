@@ -49,7 +49,7 @@ loops. Quantum-computing knowledge is optional.
 ## Experience requirements
 
 - Use machine-learning language first and introduce quantum terms in context.
-- Offer safe defaults, short help beside every prompt, and a way to go back.
+- Offer safe defaults and short help beside prompts.
 - Allow flags/config files to reproduce the same run without interactive input.
 - Never launch a CLI or mutate global state merely on import.
 - Never silently discard features, alter labels, or change the requested metric.
