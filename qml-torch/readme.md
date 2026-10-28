@@ -10,9 +10,9 @@ hybrid quantum machine-learning models. A user should be able to bring ordinary
 PyTorch training code, run a guided command, choose a few understandable quantum
 options, and receive both a classical baseline and a hybrid/QML result.
 
-> **Status:** v0.1 implementation complete. The package, quantum layer, guided
-> CLI, comparison runner, reports, examples, and tests are now wired together.
-> Follow-up features remain intentionally outside the first release.
+> **Status:** `0.1.0a1` alpha release. The package, quantum layer, guided CLI,
+> comparison runner, reports, examples, and tests are wired together. The alpha
+> is intended for educational use and feedback, not production workloads.
 
 ## Intended first experience
 

@@ -1,12 +1,18 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "qml-torch"
-version = "0.1.0"
+version = "0.1.0a1"
 description = "A beginner-friendly PyTorch interface for small hybrid quantum ML experiments"
 readme = "readme.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Charlotte AI Research"},
+]
+keywords = ["quantum machine learning", "pytorch", "pennylane", "qml"]
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
@@ -15,11 +21,30 @@ dependencies = [
     "typer>=0.12",
 ]
 
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
 [project.optional-dependencies]
 dev = [
+    "build>=1.2",
     "pytest>=7.4",
     "ruff>=0.5",
+    "twine>=5.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Charlotte-AI-Research/qml_torch/tree/main/qml-torch"
+Repository = "https://github.com/Charlotte-AI-Research/qml_torch"
+Issues = "https://github.com/Charlotte-AI-Research/qml_torch/issues"
+Changelog = "https://github.com/Charlotte-AI-Research/qml_torch/blob/main/qml-torch/CHANGELOG.md"
 
 [project.scripts]
 qml-torch = "qml_torch.cli:app"
