@@ -22,9 +22,29 @@ jobs:
         run: mypy src
       - name: Tests
         run: pytest -q tests
-      - name: Nested qml-torch package
+  alpha-package:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    defaults:
+      run:
+        working-directory: qml-torch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install the alpha package
+        run: python -m pip install -e ".[dev]"
+      - name: Lint and test
+        env:
+          MPLBACKEND: Agg
         run: |
-          pip install -e "qml-torch[dev]"
-          cd qml-torch
           ruff check src tests
           pytest -q
+      - name: Build and validate distribution artifacts
+        run: |
+          python -m build
+          python -m twine check --strict dist/qml_torch-*.whl dist/qml_torch-*.tar.gz

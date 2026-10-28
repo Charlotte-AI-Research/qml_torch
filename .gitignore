@@ -4,5 +4,6 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+qml-torch/reports/
 .vscode/
 .DS_Stor

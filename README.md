@@ -6,6 +6,17 @@ The club project has a deliberately limited scope: a reusable quantum layer, exa
 
 ## Quick start
 
+The current alpha CLI and package are in [`qml-torch/`](qml-torch/readme.md).
+From this repository root, run:
+
+```bash
+python -m pip install -e "./qml-torch[dev]"
+qml-torch demo
+```
+
+This produces a JSON result and an offline HTML experiment dashboard. The
+following setup is for the older root `qmltorch` teaching package:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
