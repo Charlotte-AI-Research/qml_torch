@@ -52,6 +52,43 @@ def test_quantum_layer_output_shape():
 
     assert outputs.shape == (batch_size, qubits)
 
+def test_quantum_layer_state_dict_restored_output():
+    torch.manual_seed(42)
+    layer = BasicQuantumLayer(qubits=2)
+
+    inputs = torch.tensor([[0.2, 0.7], [-0.4, 0.5]])
+    expected = layer(inputs).detach()
+
+    state = layer.state_dict()
+
+    torch.manual_seed(405)
+    restored_layer = BasicQuantumLayer(qubits=2)
+    assert state, "Expected the layer to have a nonempty state_dict"
+
+    restored_layer.load_state_dict(state)
+    actual = restored_layer(inputs).detach()
+
+    
+    assert torch.allclose(expected, actual, rtol=1e-5, atol=1e-6), (
+        "Loading the state_dict should restore the layer's outputs"
+    )
+
+@pytest.mark.parametrize(
+    "inputs, expected_shape",
+    [
+        (torch.tensor([0.2]), (1,)),
+        (torch.tensor([[0.2], [0.7], [-0.4]]), (3, 1)),
+    ],
+)
+def test_one_qubit_input_shapes(inputs, expected_shape):
+    layer = BasicQuantumLayer(qubits=1)
+
+    outputs = layer(inputs)
+
+    assert outputs.shape == expected_shape
+    assert torch.isfinite(outputs).all()
+
+
 
 def test_quantum_layer_optimizer_step():
     qubits = 2

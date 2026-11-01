@@ -10,10 +10,10 @@ Start with task 1. Task 3 is optional. Review existing tests before adding cases
 
 **Need:** `zero_grad()`, `backward()`, `step()`, and basic pytest assertions.
 
-- [ ] Read your existing quantum-layer optimizer test.
-- [ ] Run it alone and explain the purpose of each assertion.
-- [ ] Write down how an output-shape check differs from a gradient check.
-- [ ] Explain why one successful update does not prove that a model has learned well.
+- [x] Read your existing quantum-layer optimizer test.
+- [x] Run it alone and explain the purpose of each assertion.
+- [x] Write down how an output-shape check differs from a gradient check.
+- [x] Explain why one successful update does not prove that a model has learned well.
 
 **Open:** [quantum-layer tests](../../../qml-torch/tests/integration/test_quantum_layer.py).
 
@@ -27,11 +27,11 @@ what it cannot tell you about the circuit's mathematical correctness.
 
 **Need:** task 1, `state_dict()`, `load_state_dict()`, and `torch.allclose`.
 
-- [ ] Add an analytic-mode save/load test for `QuantumLayer`.
-- [ ] Run a fixed input through a layer, load its state into a fresh layer, and compare outputs.
-- [ ] Test a single sample and a batch with one qubit; the layer API supports this even though the CLI starts at two.
-- [ ] Keep the random seed fixed and use a clear numerical tolerance.
-- [ ] Confirm the tests fail for a real mismatch rather than just checking object existence.
+- [x] Add an analytic-mode save/load test for `QuantumLayer`.
+- [x] Run a fixed input through a layer, load its state into a fresh layer, and compare outputs.
+- [x] Test a single sample and a batch with one qubit; the layer API supports this even though the CLI starts at two.
+- [x] Keep the random seed fixed and use a clear numerical tolerance.
+- [x] Confirm the tests fail for a real mismatch rather than just checking object existence.
 
 **Open:** [layer code](../../../qml-torch/src/qml_torch/nn/quantum_layer.py) and
 [existing tests](../../../qml-torch/tests/integration/test_quantum_layer.py).
@@ -43,10 +43,10 @@ shape not already covered. The current test suite still passes.
 
 **Need:** the definitions of precision, recall, F1, and a confusion matrix.
 
-- [ ] Choose four true labels and four predicted labels with both correct and incorrect answers.
-- [ ] Calculate the confusion matrix, accuracy, precision, recall, and F1 by hand.
-- [ ] Compare those answers with the metrics produced by the trainer using controlled model outputs.
-- [ ] Include a case with no positive predictions to check zero-division handling.
+- [x] Choose four true labels and four predicted labels with both correct and incorrect answers.
+- [x] Calculate the confusion matrix, accuracy, precision, recall, and F1 by hand.
+- [x] Compare those answers with the metrics produced by the trainer using controlled model outputs.
+- [x] Include a case with no positive predictions to check zero-division handling.
 
 **Open:** [training metrics](../../../qml-torch/src/qml_torch/training/experiment.py)
 and [report tests](../../../qml-torch/tests/integration/test_reports.py).
