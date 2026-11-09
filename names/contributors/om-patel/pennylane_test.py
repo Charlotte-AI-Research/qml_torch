@@ -4,27 +4,23 @@ import torch
 dev = qml.device("default.qubit", wires=2)
 
 
-@qml.qnode(dev, interface="torch", diff_method="parameter-shift")
-def circuit(inputs, weights):
-    qml.AngleEmbedding(inputs, wires=range(2))
-    qml.RY(weights[0], wires=0)
+@qml.qnode(dev, interface="torch")
+def circuit(phi, theta):
+    qml.RX(phi[0], wires=0)
+    qml.RY(phi[1], wires=1)
     qml.CNOT(wires=[0, 1])
+    qml.PhaseShift(theta, wires=0)
 
-    return (
-        qml.expval(qml.PauliZ(0)),
-        qml.expval(qml.PauliZ(1)),
-    )
+    return qml.expval(qml.PauliZ(0)), qml.expval(qml.Hadamard(1))
 
 
-weights = torch.tensor([0.2], requires_grad=True)
-inputs = torch.tensor([0.1, 0.3])
+phi = torch.tensor([0.5, 0.1], requires_grad=True)
+theta = torch.tensor(0.2, requires_grad=True)
 
-outputs = circuit(inputs, weights)
+outputs = circuit(phi, theta)
 result = torch.stack(outputs)
-
 result.sum().backward()
 
-print("PennyLane:", qml.__version__)
-print("PyTorch:", torch.__version__)
-print("Output:", result.detach().tolist())
-print("Gradient:", weights.grad.detach().tolist())
+print("Outputs:", result.detach().tolist())
+print("Phi Gradient:", phi.grad.detach().tolist())
+print("Theta Gradient:", theta.grad.item())
