@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ..backends import build_device, require_pennylane
+from ..config.models import positive_integer
 from ..encodings import angle_encoding
 from ..measurements import pauli_z_output
 
@@ -16,12 +17,18 @@ def basic_qnode(
 ):
     """Build the internal QNode without exposing device configuration to users."""
 
-    if qubits < 1:
-        raise ValueError("qubits must be at least 1")
-    if layers < 1:
-        raise ValueError("layers must be at least 1")
+    # Validate circuit counts before constructing the PennyLane device.
+    positive_integer(qubits, "qubits")
+    positive_integer(layers, "layers")
+
+    if shots is not None:
+        positive_integer(shots, "shots")
+
+    # we need pennylane 
     qml = require_pennylane()
     dev = build_device(qubits, shots=shots, seed=seed)
+
+
     diff_method = "backprop" if shots is None else "parameter-shift"
 
     def circuit(inputs, weights):
@@ -53,7 +60,7 @@ def basic_circuit(
 ):
     """Return PennyLane's TorchLayer for the standard v0.1 circuit."""
 
-    qml = require_pennylane()
     qnode = basic_qnode(qubits, encoding_gate, layers, shots, seed)
+    qml = require_pennylane()
     weight_shapes = {"weights": (layers, qubits, 3)}
     return qml.qnn.TorchLayer(qnode, weight_shapes)
