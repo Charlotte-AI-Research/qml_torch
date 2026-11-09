@@ -3,9 +3,11 @@
 import json
 from pathlib import Path
 
+import pytest
+from rich.console import Console
 from typer.testing import CliRunner
 
-from qml_torch.cli import app
+from qml_torch.cli import app, cli
 
 
 def test_cli_runs_example(tmp_path: Path) -> None:
@@ -47,14 +49,21 @@ def test_demo_works_without_a_script_and_can_replay(tmp_path: Path) -> None:
     )
 
 
-def test_init_preserves_existing_file(tmp_path: Path) -> None:
-    path = tmp_path / "train.py"
+@pytest.mark.parametrize("terminal_width", [20, 80, 120])
+def test_init_preserves_existing_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, terminal_width: int
+) -> None:
+    monkeypatch.setattr(cli, "console", Console(width=terminal_width, markup=False))
+    monkeypatch.chdir(tmp_path)
+    # This 71-character path leaves "already" at the end of an 80-column line.
+    path = Path("a" * 62) / "train.py"
     runner = CliRunner()
     assert runner.invoke(app, ["init", str(path)]).exit_code == 0
     original = path.read_text()
     result = runner.invoke(app, ["init", str(path)])
     assert result.exit_code == 1
-    assert "already exists" in result.output
+    # Rich wraps text according to terminal width; the wording should stay stable.
+    assert "already exists. Choose a new filename." in " ".join(result.output.split())
     assert path.read_text() == original
     result = runner.invoke(
         app,

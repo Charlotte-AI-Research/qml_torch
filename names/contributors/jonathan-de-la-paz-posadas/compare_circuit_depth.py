@@ -1,7 +1,6 @@
 """Compare two circuit depths with the same inputs and initial first-layer angles."""
 
 import torch
-
 from qml_torch.nn import QuantumLayer
 
 inputs = torch.tensor([[0.3, -0.4], [-0.2, 0.5]])

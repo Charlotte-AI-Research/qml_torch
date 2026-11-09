@@ -14,6 +14,7 @@ from qml_torch.training.demo import make_demo_data
 from qml_torch.training.experiment import train_and_evaluate
 from qml_torch.validation import DataBundle
 
+
 class ControlledModel(torch.nn.Module):
     """Model that produces predictable logits for metric testing."""
 
