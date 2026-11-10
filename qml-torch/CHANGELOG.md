@@ -2,6 +2,15 @@
 
 All notable changes to QML Torch are recorded here.
 
+## [Unreleased]
+
+### Changed
+
+- Terminal dashboard shows validated data, model architecture, measured loss
+  traces, confusion matrices, test loss, and a compact reproducibility record.
+- Wide terminals display panels beside each other; smaller terminals stack them.
+- Saved artifact paths are shown as supplied, keeping relative output paths compact.
+
 ## [0.1.0a2] — 2026-10-28
 
 ### Added

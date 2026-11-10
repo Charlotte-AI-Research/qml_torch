@@ -10,13 +10,13 @@ from typing import Any
 
 import typer
 from rich.console import Console
-from rich.panel import Panel
 from rich.progress import BarColumn, Progress, TextColumn, TimeElapsedColumn
 from rich.table import Table
+from rich.text import Text
 
 from .. import __version__
 from ..config import ExperimentConfig
-from ..reporting import print_summary
+from ..reporting import print_experiment_setup, print_summary
 
 app = typer.Typer(
     add_completion=False,
@@ -52,31 +52,24 @@ def _execute(
 
     with isolated_seed(config.seed):
         data = preflight(script, config, data=data)
-    console.print(
-        Panel(
-            f"{config.n_qubits} qubits · {config.mode} · "
-            f"{config.shots if config.shots is not None else 'analytic'} shots\n"
-            f"{len(data.x_train)} training / {len(data.x_test)} test samples · "
-            f"{config.epochs} epochs · seed {config.seed}",
-            title=f"QML TORCH / {__version__}",
-            border_style="cyan",
-        )
-    )
+    print_experiment_setup(config, data, console, builtin=script is None)
     if config.shots is not None:
         console.print("Sampled mode uses parameter-shift gradients; expect a slower run.")
     names = ("classical", "hybrid-vqc") if config.mode == "both" else (config.mode,)
     with Progress(
         TextColumn("{task.description}"),
-        BarColumn(),
+        BarColumn(bar_width=None, complete_style="bright_cyan", finished_style="bright_green"),
         TextColumn("{task.completed:.0f}/{task.total:.0f} epochs"),
+        TextColumn("loss {task.fields[loss]}"),
         TimeElapsedColumn(),
         console=console,
+        expand=True,
         disable=not console.is_terminal,
     ) as progress:
-        tasks = {name: progress.add_task(name, total=config.epochs) for name in names}
+        tasks = {name: progress.add_task(name, total=config.epochs, loss="—") for name in names}
 
         def on_epoch(name: str, epoch: int, loss: float) -> None:
-            progress.update(tasks[name], completed=epoch, description=f"{name} · loss {loss:.4f}")
+            progress.update(tasks[name], completed=epoch, loss=f"{loss:.4f}")
 
         report = run_experiment(
             script,
@@ -86,11 +79,12 @@ def _execute(
             html_report=html_report,
             on_epoch=on_epoch,
         )
+    console.print(Text("✓ Training complete", style="bright_green"))
     print_summary(report, console)
-    console.print(f"JSON report: {output.expanduser().resolve()}")
+    console.print(Text("✓ REPORTS SAVED", style="bold bright_green"))
+    console.print(f"  JSON  {output.expanduser()}")
     if html_report:
-        console.print(f"HTML dashboard: {output.expanduser().resolve().with_suffix('.html')}")
-        console.print("Open the HTML file in your browser to explore the result.")
+        console.print(f"  HTML  {output.expanduser().with_suffix('.html')}")
 
 
 def _error(exc: Exception, debug: bool) -> None:

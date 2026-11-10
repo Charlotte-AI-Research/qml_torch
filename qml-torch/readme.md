@@ -55,13 +55,24 @@ Supported model modes: `classical`, `hybrid-vqc`, and `both`.
 
 ## What you get
 
-- A terminal comparison of test accuracy, F1, trainable parameters, and runtime.
+- A terminal dashboard with the model architecture, training-loss traces,
+  confusion matrices, test accuracy, F1, test loss, parameters, and runtime.
 - An offline HTML dashboard with learning curves, confusion matrices, circuit
   gates, settings, and dependency versions.
 - Machine-readable JSON with loss history, precision, recall, test loss, data
   fingerprint, seed, and the hidden circuit preset.
 - Explicit `running`, `completed`, `failed`, or `cancelled` status for training
   artifacts. Writes are atomic per file.
+
+For a presentation, make the terminal at least 110 columns wide and run:
+
+```bash
+qml-torch demo --epochs 60 --output reports/poster-demo.json
+```
+
+The dashboard places panels beside each other on wide terminals and stacks them
+on smaller screens. Each loss trace has its own scale and displays the real
+starting and ending training loss.
 
 Repeat a run from its saved settings:
 

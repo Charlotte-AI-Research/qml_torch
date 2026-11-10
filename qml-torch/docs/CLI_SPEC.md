@@ -40,9 +40,21 @@ flags override its values. Passing a config disables prompts for `run`.
 
 The default output is JSON plus an HTML sibling. `--no-html` saves JSON only.
 
-The terminal includes progress on interactive terminals, test accuracy, F1,
-parameter counts, runtimes, warnings, and the trained circuit. HTML adds learning
-curves, confusion matrices, and reproducibility details.
+The terminal shows validated dataset sizes, model architecture, progress on
+interactive terminals, test accuracy, F1, test loss, parameter counts, runtimes,
+loss traces, confusion matrices, and the trained circuit. Loss traces use each
+model's own scale and show the actual first and last training losses. The run
+record includes the seed and a prefix of the dataset's SHA-256 fingerprint.
+HTML provides larger learning curves and full reproducibility details.
+
+For a presentation screenshot:
+
+```bash
+qml-torch demo --epochs 60 --output reports/poster-demo.json
+```
+
+Make the terminal at least 110 columns wide for panels beside each other. Smaller
+terminals stack the panels. All displayed results come from the actual run.
 
 Finite-shot runs use an explicit simulator seed. A dataset fingerprint helps
 compare repeated runs. The baseline is linear and not parameter-matched to the VQC.
