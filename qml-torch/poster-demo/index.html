@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a Quantum Classifier Learns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* A figure from a physics paper, animated: white page, black ink, matplotlib's two class colors,
+     one red for the quantum state, a yellow highlighter for "now".
+     Layout: fixed 16:9 stage; sub-figures (a) data, (b) circuit, (c) readout; narration underneath. */
+  --paper: #fdfdfc;
+  --ink: #161616;
+  --gray: #6b6b6b;
+  --orange: #ff7f0e;
+  --blue: #1f77b4;
+  --red: #d62728;
+  --mark: #ffe45c;
+  --font-serif: "STIX Two Text", "STIXGeneral", Georgia, "Times New Roman", serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); overflow: hidden; }
+body { display: grid; place-items: center; font-family: var(--font-sans); }
+canvas { display: block; outline: none; cursor: pointer; }
+canvas:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="stage" tabindex="0" role="img"
+  aria-label="Looping animation: a two-qubit quantum classifier from QML Torch encodes data, rotates and entangles qubits, measures them, makes a prediction, and trains over 60 epochs."></canvas>
+<p class="sr">This animation replays a recorded qml-torch training run. Two features are encoded as qubit rotations, three trainable rotations per qubit follow, CNOT gates entangle the qubits, Pauli-Z averages feed a small linear layer, and training lowers the loss from about 0.59 to 0.17. The model classifies all 16 held-out test examples correctly; a classical linear baseline does too. Keys: Space pauses, arrow keys change step, F toggles fullscreen.</p>
+
+<script id="trace">/* TRACE:BEGIN */window.TRACE = {"source":"qml-torch 0.1.0a2 demo, seed 7, 60 epochs, Adam lr 0.03, analytic simulator","train":{"x":[[2.1770641803741455,2.2458677291870117],[2.090238571166992,1.90681791305542],[1.9456534385681152,1.8348326683044434],[0.2296246588230133,1.039200782775879],[0.8625617027282715,0.9538266062736511],[1.638904333114624,2.1276087760925293],[2.4372949600219727,1.9504700899124146],[1.7752832174301147,1.7653964757919312],[0.9196723699569702,0.23347875475883484],[0.2529962360858917,0.24206939339637756],[0.40146440267562866,0.4682959318161011],[0.800336480140686,0.728010892868042],[1.577043056488037,1.4346742630004883],[1.9122309684753418,1.6626652479171753],[0.6249415278434753,0.6429566144943237],[2.121659755706787,2.042343854904175],[0.40395963191986084,0.7686892747879028],[0.9371305704116821,0.45143967866897583],[2.4755475521087646,2.2438697814941406],[1.8187377452850342,1.3174399137496948],[1.9899717569351196,2.004763603210449],[1.0601489543914795,1.6318334341049194],[0.5871978402137756,0.5853975415229797],[1.2279101610183716,0.5509964227676392],[0.9279628992080688,0.4893462657928467],[1.8304622173309326,1.8980495929718018],[0.9617322683334351,0.43264657258987427],[1.843420147895813,2.176257610321045],[2.1003811359405518,2.3761651515960693],[1.7023996114730835,1.9989858865737915],[1.7956101894378662,2.190155506134033],[1.8573009967803955,2.2302863597869873],[1.6842607259750366,2.309105396270752],[1.7063984870910645,1.8340266942977905],[1.27266526222229,2.071289539337158],[0.5999011993408203,0.7355449795722961],[0.1052810549736023,0.5464273691177368],[0.7095332145690918,0.884621798992157],[0.3020837604999542,0.5119529366493225],[2.29350209236145,1.835344672203064],[1.8965421915054321,1.8721503019332886],[0.5715237855911255,0.5749601721763611],[0.17520058155059814,0.5526299476623535],[0.03155660629272461,0.8522301912307739],[1.1422799825668335,0.3329947292804718],[0.7191190719604492,0.9770495891571045],[0.45767250657081604,0.38190343976020813],[0.7023125886917114,1.3395028114318848]],"y":[1,1,1,0,0,1,1,1,0,0,0,0,1,1,0,1,0,0,1,1,1,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0]},"test":{"x":[[1.9931467771530151,2.3707613945007324],[0.6694745421409607,0.6702914834022522],[2.019343852996826,1.7233269214630127],[1.641948938369751,1.9262861013412476],[1.7362606525421143,1.742690920829773],[0.6661838293075562,0.8670483231544495],[0.920158863067627,0.7284449934959412],[0.6051734089851379,0.9957038164138794],[0.32490575313568115,0.4909304678440094],[1.9677443504333496,2.1546430587768555],[0.4907878637313843,0.8912945985794067],[1.82499098777771,1.9996360540390015],[2.1317238807678223,1.7479627132415771],[1.9140644073486328,2.236342191696167],[0.3107377588748932,1.2762418985366821],[0.4853273034095764,0.5263996720314026]],"y":[1,0,1,1,1,0,0,0,0,1,0,1,1,1,0,0]},"frames":[{"q":[[3.3610174655914307,1.2491172552108765,4.14194917678833],[4.127363204956055,1.4624841213226318,2.6707396507263184]],"w":[-0.4142428934574127,0.18347492814064026],"b":-0.19047172367572784,"acc":0.9791666865348816,"loss":0.5938192009925842},{"q":[[3.391017436981201,1.219117283821106,4.111949443817139],[4.097362995147705,1.4324841499328613,2.700739622116089]],"w":[-0.4442428946495056,0.21347492933273315],"b":-0.22047165036201477,"acc":0.9791666865348816,"loss":0.5805426239967346},{"q":[[3.4210197925567627,1.1890794038772583,4.081931114196777],[4.06740665435791,1.4025856256484985,2.730750322341919]],"w":[-0.4742654263973236,0.24350683391094208],"b":-0.2441863864660263,"acc":1.0,"loss":0.5670135617256165},{"q":[[3.4510576725006104,1.1589730978012085,4.051920413970947],[4.037540912628174,1.3728811740875244,2.7607626914978027]],"w":[-0.5043178796768188,0.2735866904258728],"b":-0.2561948299407959,"acc":1.0,"loss":0.5532899498939514},{"q":[[3.481172800064087,1.1287736892700195,4.021998882293701],[4.007805347442627,1.3434633016586304,2.7907440662384033]],"w":[-0.5343995094299316,0.30372318625450134],"b":-0.26324811577796936,"acc":1.0,"loss":0.5394800305366516},{"q":[[3.5114047527313232,1.0984658002853394,3.992321729660034],[3.978248119354248,1.3144404888153076,2.8206446170806885]],"w":[-0.5645058751106262,0.3339206278324127],"b":-0.27236464619636536,"acc":1.0,"loss":0.5256801247596741},{"q":[[3.5417892932891846,1.068042278289795,3.9631290435791016],[3.9489479064941406,1.2859550714492798,2.8504068851470947]],"w":[-0.5946320295333862,0.36418256163597107],"b":-0.28558266162872314,"acc":1.0,"loss":0.5119635462760925},{"q":[[3.572357416152954,1.0375036001205444,3.934762477874756],[3.9200263023376465,1.258185625076294,2.8799705505371094]],"w":[-0.6247726082801819,0.3945128619670868],"b":-0.30150410532951355,"acc":1.0,"loss":0.49840840697288513},{"q":[[3.603135585784912,1.006857991218567,3.9076881408691406],[3.891645669937134,1.2313334941864014,2.9092705249786377]],"w":[-0.6549205183982849,0.4249144196510315],"b":-0.31766608357429504,"acc":1.0,"loss":0.48508429527282715},{"q":[[3.634143590927124,0.9761217832565308,3.8825149536132812],[3.863994598388672,1.2056007385253906,2.938229560852051]],"w":[-0.6850656270980835,0.45538753271102905],"b":-0.33116817474365234,"acc":1.0,"loss":0.472036212682724},{"q":[[3.665393352508545,0.9453194737434387,3.859989643096924],[3.8372533321380615,1.1811617612838745,2.9667460918426514]],"w":[-0.7151936292648315,0.48592811822891235],"b":-0.34045615792274475,"acc":1.0,"loss":0.4592878818511963},{"q":[[3.6968865394592285,0.9144823551177979,3.8409271240234375],[3.811554431915283,1.1581435203552246,2.9946823120117188]],"w":[-0.7452862858772278,0.5165271162986755],"b":-0.34652429819107056,"acc":1.0,"loss":0.44685569405555725},{"q":[[3.7286126613616943,0.8836452960968018,3.8260395526885986],[3.7869699001312256,1.136623501777649,3.021860361099243]],"w":[-0.775322675704956,0.547172486782074],"b":-0.35165509581565857,"acc":1.0,"loss":0.4347475469112396},{"q":[[3.7605466842651367,0.852843701839447,3.8157236576080322],[3.7635233402252197,1.116638422012329,3.048068046569824]],"w":[-0.8052809834480286,0.5778519511222839],"b":-0.35783132910728455,"acc":1.0,"loss":0.42296209931373596},{"q":[[3.792644500732422,0.8221113681793213,3.809938669204712],[3.741213798522949,1.098192811012268,3.0730717182159424]],"w":[-0.8351399898529053,0.6085551381111145],"b":-0.36568036675453186,"acc":1.0,"loss":0.41150036454200745},{"q":[[3.8248391151428223,0.7914799451828003,3.808245897293091],[3.720029592514038,1.0812621116638184,3.0966267585754395]],"w":[-0.8648793697357178,0.6392736434936523],"b":-0.3743639886379242,"acc":1.0,"loss":0.40037333965301514},{"q":[[3.8570380210876465,0.7609803080558777,3.8099424839019775],[3.699941873550415,1.0657932758331299,3.1184821128845215]],"w":[-0.894479513168335,0.6699994802474976],"b":-0.3820672333240509,"acc":1.0,"loss":0.389597088098526},{"q":[[3.8891212940216064,0.7306437492370605,3.8141908645629883],[3.6808812618255615,1.0517081022262573,3.1383774280548096]],"w":[-0.9239211678504944,0.7007228136062622],"b":-0.3868657946586609,"acc":1.0,"loss":0.3791838586330414},{"q":[[3.9209439754486084,0.7005035281181335,3.820099353790283],[3.662712812423706,1.0389111042022705,3.156038761138916]],"w":[-0.953184962272644,0.731429934501648],"b":-0.3878556489944458,"acc":1.0,"loss":0.369140625},{"q":[[3.952341079711914,0.6705952286720276,3.8267593383789062],[3.645238161087036,1.0273016691207886,3.1711931228637695]],"w":[-0.9822517037391663,0.7621029019355774],"b":-0.3853825032711029,"acc":1.0,"loss":0.3594684600830078},{"q":[[3.9831340312957764,0.6409569382667542,3.833266019821167],[3.6282341480255127,1.0167828798294067,3.1836063861846924]],"w":[-1.0111032724380493,0.7927204966545105],"b":-0.38033363223075867,"acc":0.9791666865348816,"loss":0.35015901923179626},{"q":[[4.013139724731445,0.6116291880607605,3.838754177093506],[3.6115074157714844,1.007262945175171,3.193133592605591]],"w":[-1.0397233963012695,0.8232599496841431],"b":-0.37342503666877747,"acc":0.9791666865348816,"loss":0.34119394421577454},{"q":[[4.042181968688965,0.5826547145843506,3.842467784881592],[3.594943046569824,0.9986516237258911,3.1997594833374023]],"w":[-1.0680984258651733,0.8536980152130127],"b":-0.3648001551628113,"acc":0.9791666865348816,"loss":0.3325510025024414},{"q":[[4.070105075836182,0.5540783405303955,3.8438527584075928],[3.5785281658172607,0.9908565878868103,3.2036097049713135]],"w":[-1.0962169170379639,0.8840116858482361],"b":-0.3540348708629608,"acc":0.9791666865348816,"loss":0.3242110311985016},{"q":[[4.096789360046387,0.5259461402893066,3.842637300491333],[3.562347650527954,0.9837828278541565,3.204930305480957]],"w":[-1.1240692138671875,0.9141783118247986],"b":-0.340528666973114,"acc":0.9791666865348816,"loss":0.31616270542144775},{"q":[[4.122165679931641,0.4983046054840088,3.838860034942627],[3.546560764312744,0.9773366451263428,3.204052448272705]],"w":[-1.1516467332839966,0.9441753625869751],"b":-0.3239571154117584,"acc":0.9791666865348816,"loss":0.30840352177619934},{"q":[[4.146223545074463,0.4711994230747223,3.832836151123047],[3.5313735008239746,0.9714310169219971,3.201355218887329]],"w":[-1.1789416074752808,0.973980724811554],"b":-0.30442941188812256,"acc":0.9791666865348816,"loss":0.30093830823898315},{"q":[[4.169008255004883,0.44467419385910034,3.825091600418091],[3.517009973526001,0.9659902453422546,3.197235584259033]],"w":[-1.2059463262557983,1.0035728216171265],"b":-0.28237923979759216,"acc":0.9791666865348816,"loss":0.29377511143684387},{"q":[[4.19061279296875,0.4187696576118469,3.8162975311279297],[3.5036869049072266,0.9609528183937073,3.1920852661132812]],"w":[-1.2326539754867554,1.0329312086105347],"b":-0.2584303319454193,"acc":0.9791666865348816,"loss":0.2869197428226471},{"q":[[4.211162090301514,0.3935229480266571,3.8072102069854736],[3.491588592529297,0.9562724232673645,3.1862709522247314]],"w":[-1.2590581178665161,1.0620368719100952],"b":-0.23334676027297974,"acc":0.9791666865348816,"loss":0.2803715467453003},{"q":[[4.230794429779053,0.368967205286026,3.79860520362854],[3.480846881866455,0.9519166946411133,3.180119752883911]],"w":[-1.2851531505584717,1.0908727645874023],"b":-0.20803378522396088,"acc":0.9791666865348816,"loss":0.27412116527557373},{"q":[[4.24963903427124,0.34513139724731445,3.7911877632141113],[3.4715325832366943,0.9478640556335449,3.173910617828369]],"w":[-1.3109345436096191,1.1194241046905518],"b":-0.18350063264369965,"acc":0.9791666865348816,"loss":0.26815131306648254},{"q":[[4.267796516418457,0.32204052805900574,3.7854883670806885],[3.463660717010498,0.9440999627113342,3.167872905731201]],"w":[-1.3363986015319824,1.1476787328720093],"b":-0.1607023924589157,"acc":0.9791666865348816,"loss":0.26244035363197327},{"q":[[4.285323143005371,0.2997159957885742,3.7817704677581787],[3.4572041034698486,0.9406132102012634,3.1621901988983154]],"w":[-1.3615427017211914,1.1756271123886108],"b":-0.1402842253446579,"acc":0.9791666865348816,"loss":0.25696709752082825},{"q":[[4.302220821380615,0.2781759798526764,3.77999210357666],[3.4521028995513916,0.9373935461044312,3.15700364112854]],"w":[-1.3863654136657715,1.2032620906829834],"b":-0.12240669131278992,"acc":0.9791666865348816,"loss":0.25171536207199097},{"q":[[4.318439483642578,0.25743570923805237,3.779829978942871],[3.4482622146606445,0.9344306588172913,3.1524078845977783]],"w":[-1.4108657836914062,1.2305786609649658],"b":-0.10680339485406876,"acc":0.9791666865348816,"loss":0.2466750293970108},{"q":[[4.333887100219727,0.23750746250152588,3.780749797821045],[3.445540189743042,0.931713342666626,3.148442268371582]],"w":[-1.4350439310073853,1.2575730085372925],"b":-0.09301839023828506,"acc":0.9791666865348816,"loss":0.24184006452560425},{"q":[[4.348447322845459,0.2184004932641983,3.782095432281494],[3.4437379837036133,0.929229199886322,3.145085334777832]],"w":[-1.4589005708694458,1.2842426300048828],"b":-0.08066369593143463,"acc":0.9791666865348816,"loss":0.237204909324646},{"q":[[4.362000465393066,0.2001209706068039,3.78318190574646],[3.4426040649414062,0.9269639849662781,3.142259359359741]],"w":[-1.4824371337890625,1.310585618019104],"b":-0.06957611441612244,"acc":0.9791666865348816,"loss":0.23276209831237793},{"q":[[4.374441146850586,0.18267199397087097,3.7833831310272217],[3.441861867904663,0.9249016046524048,3.139850616455078]],"w":[-1.5056556463241577,1.336600661277771],"b":-0.0598263181746006,"acc":0.9791666865348816,"loss":0.22850079834461212},{"q":[[4.385694980621338,0.16605371236801147,3.7822070121765137],[3.441251516342163,0.9230245351791382,3.137740135192871]],"w":[-1.5285587310791016,1.3622870445251465],"b":-0.05160010606050491,"acc":0.9791666865348816,"loss":0.2244071215391159},{"q":[[4.39572811126709,0.15026336908340454,3.779346227645874],[3.440577268600464,0.9213149547576904,3.1358373165130615]],"w":[-1.5511494874954224,1.3876447677612305],"b":-0.0450238361954689,"acc":0.9791666865348816,"loss":0.22046633064746857},{"q":[[4.404552936553955,0.13529539108276367,3.774700403213501],[3.4397401809692383,0.9197558164596558,3.134104013442993]],"w":[-1.5734314918518066,1.4126743078231812],"b":-0.04003731533885002,"acc":0.9791666865348816,"loss":0.21666641533374786},{"q":[[4.412228584289551,0.12114129960536957,3.768371105194092],[3.4387447834014893,0.9183320999145508,3.1325604915618896]],"w":[-1.5954086780548096,1.4373770952224731],"b":-0.036387696862220764,"acc":0.9791666865348816,"loss":0.21299929916858673},{"q":[[4.418858051300049,0.10778965055942535,3.7606379985809326],[3.437676429748535,0.9170312285423279,3.1312713623046875]],"w":[-1.6170850992202759,1.4617549180984497],"b":-0.033743418753147125,"acc":0.9791666865348816,"loss":0.20946036279201508},{"q":[[4.424580097198486,0.09522606432437897,3.7519237995147705],[3.436659336090088,0.9158430695533752,3.130319356918335]],"w":[-1.6384650468826294,1.4858100414276123],"b":-0.03186095133423805,"acc":0.9791666865348816,"loss":0.20604653656482697},{"q":[[4.429558277130127,0.0834333598613739,3.742746591567993],[3.435814380645752,0.9147591590881348,3.1297762393951416]],"w":[-1.659553050994873,1.5095453262329102],"b":-0.030714889988303185,"acc":0.9791666865348816,"loss":0.20275460183620453},{"q":[[4.433963298797607,0.07239188253879547,3.73366117477417],[3.435229539871216,0.9137718081474304,3.12968373298645]],"w":[-1.6803536415100098,1.532963752746582],"b":-0.03052118606865406,"acc":0.9791666865348816,"loss":0.1995796114206314},{"q":[[4.437955379486084,0.06207986921072006,3.725184679031372],[3.4349513053894043,0.9128738045692444,3.1300477981567383]],"w":[-1.7008717060089111,1.556068778038025],"b":-0.031635548919439316,"acc":0.9791666865348816,"loss":0.19651532173156738},{"q":[[4.441666126251221,0.052473846822977066,3.717719793319702],[3.43499493598938,0.9120581746101379,3.130845785140991]],"w":[-1.7211122512817383,1.5788642168045044],"b":-0.03437449410557747,"acc":0.9791666865348816,"loss":0.19355423748493195},{"q":[[4.445184707641602,0.043548960238695145,3.7114923000335693],[3.4353599548339844,0.9113183617591858,3.13203763961792]],"w":[-1.7410802841186523,1.6013541221618652],"b":-0.03885389491915703,"acc":0.9791666865348816,"loss":0.19068950414657593},{"q":[[4.448553085327148,0.03527924418449402,3.70652437210083],[3.436039447784424,0.9106481671333313,3.133572578430176]],"w":[-1.760781168937683,1.6235429048538208],"b":-0.04492727667093277,"acc":0.9791666865348816,"loss":0.18791620433330536},{"q":[[4.451768398284912,0.027637841179966927,3.702650547027588],[3.4370172023773193,0.9100416898727417,3.135390281677246]],"w":[-1.7802201509475708,1.6454354524612427],"b":-0.05223967880010605,"acc":0.9791666865348816,"loss":0.1852310448884964},{"q":[[4.454794406890869,0.020597200840711594,3.6995673179626465],[3.4382572174072266,0.9094929695129395,3.137415647506714]],"w":[-1.7994024753570557,1.6670368909835815],"b":-0.06035413593053818,"acc":0.9791666865348816,"loss":0.18263177573680878},{"q":[[4.457576274871826,0.01412929967045784,3.6969003677368164],[3.43969464302063,0.9089961051940918,3.139554262161255]],"w":[-1.818333625793457,1.6883524656295776],"b":-0.06888651102781296,"acc":0.9791666865348816,"loss":0.1801161766052246},{"q":[[4.460057258605957,0.008205870166420937,3.6942732334136963],[3.441236734390259,0.9085454940795898,3.1416962146759033]],"w":[-1.8370188474655151,1.7093876600265503],"b":-0.07759229838848114,"acc":0.9791666865348816,"loss":0.1776810884475708},{"q":[[4.462190628051758,0.0027986234053969383,3.691364049911499],[3.4427783489227295,0.908136248588562,3.143728494644165]],"w":[-1.8554633855819702,1.7301478385925293],"b":-0.08637402206659317,"acc":0.9791666865348816,"loss":0.17532263696193695},{"q":[[4.463949203491211,-0.002120546530932188,3.6879446506500244],[3.4442296028137207,0.9077643156051636,3.1455538272857666]],"w":[-1.873672604560852,1.750638484954834],"b":-0.09521978348493576,"acc":0.9791666865348816,"loss":0.17303626239299774},{"q":[[4.465329647064209,-0.006579382345080376,3.6839001178741455],[3.4455411434173584,0.9074260592460632,3.1471097469329834]],"w":[-1.8916515111923218,1.7708650827407837],"b":-0.10412022471427917,"acc":0.9791666865348816,"loss":0.17081774771213531},{"q":[[4.466353416442871,-0.010605119168758392,3.6792309284210205],[3.4467179775238037,0.9071178436279297,3.1483776569366455]],"w":[-1.9094053506851196,1.7908331155776978],"b":-0.11301667988300323,"acc":0.9791666865348816,"loss":0.16866379976272583},{"q":[[4.467064380645752,-0.014224357903003693,3.674044132232666],[3.447815418243408,0.9068358540534973,3.1493799686431885]],"w":[-1.9269391298294067,1.810548186302185],"b":-0.12180919945240021,"acc":0.9791666865348816,"loss":0.1665719747543335}],"hybrid":{"final_train_loss":0.16866379976272583,"test_accuracy":1.0,"test_loss":0.186184823513031,"precision":1.0,"recall":1.0,"f1":1.0,"confusion_matrix":[[8,0],[0,8]],"parameter_count":9,"runtime_seconds":0.6116695839446038},"classical":{"final_train_loss":0.3758428990840912,"test_accuracy":1.0,"test_loss":0.3694508671760559,"precision":1.0,"recall":1.0,"f1":1.0,"confusion_matrix":[[8,0],[0,8]],"parameter_count":3,"runtime_seconds":0.02923633297905326},"check":{"x":[[2.1770641803741455,2.2458677291870117],[2.090238571166992,1.90681791305542],[1.9456534385681152,1.8348326683044434],[0.2296246588230133,1.039200782775879]],"z":[[-0.8338602781295776,0.5226541757583618],[-0.6028186082839966,0.4171464145183563],[-0.5438732504844666,0.42899686098098755],[0.21878553926944733,-0.10808159410953522]],"score":[2.431279420852661,1.7950491905212402,1.702920913696289,-0.7390825152397156]}};/* TRACE:END */</script>
+<script>
+(() => {
+'use strict';
+
+const T = window.TRACE;
+const cv = document.getElementById('stage');
+const ctx = cv.getContext('2d');
+const W = 1920, H = 1080;
+
+// ---------- tokens ----------
+const rootStyle = getComputedStyle(document.documentElement);
+const tok = n => rootStyle.getPropertyValue(n).trim();
+const COL = { paper: tok('--paper'), ink: tok('--ink'), gray: tok('--gray'), orange: tok('--orange'),
+  blue: tok('--blue'), red: tok('--red'), mark: tok('--mark') };
+const SERIF = tok('--font-serif'), SANS = tok('--font-sans');
+const RGB = {};
+for (const [k, v] of Object.entries(COL)) { const h = v.replace('#', ''); RGB[k] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); }
+const rgba = (k, a = 1) => `rgba(${RGB[k][0]},${RGB[k][1]},${RGB[k][2]},${a})`;
+const F = (w, s, fam) => `${w} ${s}px ${fam}`;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- small math ----------
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+const ease = v => { v = clamp01(v); return v * v * (3 - 2 * v); };
+const lerp = (a, b, t) => a + (b - a) * t;
+const sig = v => 1 / (1 + Math.exp(-v));
+const fmt = (v, d = 2) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+const pct = v => Math.round(v * 100) + '%';
+
+// ---------- two-qubit statevector simulator ----------
+// Index = 2*q0 + q1 (PennyLane wire 0 is the most significant bit). Matches qml_torch's
+// ry-rz-ry-ring-v1 preset: AngleEmbedding(RY) -> RY RZ RY per qubit -> CNOT(0,1), CNOT(1,0) -> <Z>.
+function apply1(s, wire, u) {
+  const m = wire === 0 ? 2 : 1;
+  for (let i = 0; i < 4; i++) {
+    if (i & m) continue;
+    const j = i | m, xr = s[2*i], xi = s[2*i+1], yr = s[2*j], yi = s[2*j+1];
+    s[2*i] = u[0]*xr - u[1]*xi + u[2]*yr - u[3]*yi; s[2*i+1] = u[0]*xi + u[1]*xr + u[2]*yi + u[3]*yr;
+    s[2*j] = u[4]*xr - u[5]*xi + u[6]*yr - u[7]*yi; s[2*j+1] = u[4]*xi + u[5]*xr + u[6]*yi + u[7]*yr;
+  }
+}
+const RY = t => { const c = Math.cos(t/2), s = Math.sin(t/2); return [c,0,-s,0,s,0,c,0]; };
+const RZ = t => { const c = Math.cos(t/2), s = Math.sin(t/2); return [c,-s,0,0,0,0,c,s]; };
+function applyCXt(s, ctrl, tgt, t) { // controlled X^t: identity at t=0, CNOT at t=1
+  const er = Math.cos(Math.PI*t), ei = Math.sin(Math.PI*t);
+  const u = [(1+er)/2, ei/2, (1-er)/2, -ei/2, (1-er)/2, -ei/2, (1+er)/2, ei/2];
+  const cm = ctrl === 0 ? 2 : 1, tm = tgt === 0 ? 2 : 1;
+  for (let i = 0; i < 4; i++) {
+    if (!(i & cm) || (i & tm)) continue;
+    const j = i | tm, xr = s[2*i], xi = s[2*i+1], yr = s[2*j], yi = s[2*j+1];
+    s[2*i] = u[0]*xr - u[1]*xi + u[2]*yr - u[3]*yi; s[2*i+1] = u[0]*xi + u[1]*xr + u[2]*yi + u[3]*yr;
+    s[2*j] = u[4]*xr - u[5]*xi + u[6]*yr - u[7]*yi; s[2*j+1] = u[4]*xi + u[5]*xr + u[6]*yi + u[7]*yr;
+  }
+}
+// p in [0, 6]: how far through the six gate columns (fractions give partial gates for animation).
+function runCircuit(x, q, p, s) {
+  s.fill(0); s[0] = 1;
+  for (let c = 0; c < 6; c++) {
+    const f = clamp01(p - c); if (f <= 0) break;
+    if (c === 0) { apply1(s, 0, RY(x[0]*f)); apply1(s, 1, RY(x[1]*f)); }
+    else if (c <= 3) { const g = c === 2 ? RZ : RY; apply1(s, 0, g(q[0][c-1]*f)); apply1(s, 1, g(q[1][c-1]*f)); }
+    else if (c === 4) applyCXt(s, 0, 1, f);
+    else applyCXt(s, 1, 0, f);
+  }
+  return s;
+}
+const probs = s => [0, 1, 2, 3].map(i => s[2*i]*s[2*i] + s[2*i+1]*s[2*i+1]);
+const zFromProbs = p => [p[0] + p[1] - p[2] - p[3], p[0] - p[1] + p[2] - p[3]];
+function bloch(s, wire) { // reduced single-qubit Bloch vector
+  const [i0, i1, j0, j1] = wire === 0 ? [0, 1, 2, 3] : [0, 2, 1, 3];
+  const re = s[2*i0]*s[2*j0] + s[2*i0+1]*s[2*j0+1] + s[2*i1]*s[2*j1] + s[2*i1+1]*s[2*j1+1];
+  const im = s[2*i0+1]*s[2*j0] - s[2*i0]*s[2*j0+1] + s[2*i1+1]*s[2*j1] - s[2*i1]*s[2*j1+1];
+  const r00 = s[2*i0]**2 + s[2*i0+1]**2 + s[2*i1]**2 + s[2*i1+1]**2;
+  return [2*re, -2*im, 2*r00 - 1];
+}
+const BUF = new Float64Array(8), TB = new Float64Array(8);
+function predict(x, fr) {
+  const p = probs(runCircuit(x, fr.q, 6, BUF)), z = zFromProbs(p);
+  const score = fr.w[0]*z[0] + fr.w[1]*z[1] + fr.b;
+  return { p, z, score, prob: sig(score) };
+}
+
+if (!T) {
+  cv.width = W; cv.height = H; cv.style.width = '100vw';
+  ctx.fillStyle = COL.paper; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = COL.ink; ctx.font = F(400, 36, SERIF);
+  ctx.fillText('No training trace found. Run: python qml-torch/poster-demo/export_trace.py', 80, 540);
+  return;
+}
+
+// ---------- recorded run ----------
+const NE = T.frames.length - 1;
+function frameAt(e) {
+  if (e <= 0) return T.frames[0];
+  if (e >= NE) return T.frames[NE];
+  const i = Math.floor(e), f = e - i, A = T.frames[i], B = T.frames[i + 1];
+  return { q: A.q.map((r, w) => r.map((v, g) => lerp(v, B.q[w][g], f))),
+    w: A.w.map((v, j) => lerp(v, B.w[j], f)), b: lerp(A.b, B.b, f) };
+}
+const F0 = T.frames[0], FN = T.frames[NE];
+
+// Feature the training example that gains the most confidence and shows clear entanglement.
+const SI = (() => {
+  let best = 0, bestV = -Infinity;
+  T.train.x.forEach((x, i) => {
+    const y = T.train.y[i], p0 = predict(x, F0).prob, p1 = predict(x, FN).prob;
+    const c0 = y ? p0 : 1 - p0, c1 = y ? p1 : 1 - p1;
+    if (c0 < 0.5 || c1 < 0.5) return;
+    const len = Math.hypot(...bloch(runCircuit(x, F0.q, 6, BUF), 0));
+    const v = (c1 - c0) + 0.3 * (1 - len);
+    if (v > bestV) { bestV = v; best = i; }
+  });
+  return best;
+})();
+const SX = T.train.x[SI], SY = T.train.y[SI];
+const CLASS = ['orange', 'blue'];
+const P0 = predict(SX, F0);
+const conf = (pr, y) => y ? pr : 1 - pr;
+const ENT_LEN = Math.hypot(...bloch(runCircuit(SX, F0.q, 6, BUF), 0));
+const TEST_OK = T.test.x.map((x, i) => (predict(x, FN).prob >= 0.5 ? 1 : 0) === T.test.y[i]);
+const TEST_N = T.test.x.length, TEST_K = TEST_OK.filter(Boolean).length;
+const CLS_K = Math.round(T.classical.test_accuracy * TEST_N);
+const N_TRAIN = T.train.x.length;
+const N_WEIGHTS = T.hybrid.parameter_count;
+
+// Illustrative shots, sampled (seeded) from the exact untrained outcome probabilities.
+const SHOT_N = 200, SH0 = 0.9, SHD = 4.0, FLY = 0.55;
+const SHOTS = (() => {
+  let a = 7;
+  const rnd = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const out = [];
+  for (let i = 0; i < SHOT_N; i++) { const r = rnd(); let c = 0, o = 0; for (; o < 3; o++) { c += P0.p[o]; if (r < c) break; } out.push(o); }
+  return out;
+})();
+const shotTime = i => SH0 + SHD * i / SHOT_N;
+
+// ---------- timeline ----------
+const CH = [
+  { id: 'data', name: 'data', dur: 6.5 },
+  { id: 'encode', name: 'encode', dur: 7 },
+  { id: 'rotate', name: 'rotate', dur: 8 },
+  { id: 'entangle', name: 'entangle', dur: 7.5 },
+  { id: 'measure', name: 'measure', dur: 8.5 },
+  { id: 'decide', name: 'decide', dur: 7.5 },
+  { id: 'learn', name: 'learn', dur: 17 },
+  { id: 'test', name: 'test', dur: 10 },
+];
+const IDX = Object.fromEntries(CH.map((c, i) => [c.id, i]));
+const START = []; { let a = 0; for (const c of CH) { START.push(a); a += c.dur; } }
+const TOTAL = CH.reduce((a, c) => a + c.dur, 0);
+const SPOT = { data: [1,0,0], encode: [1,1,0], rotate: [0,1,0], entangle: [0,1,0], measure: [0,1,1],
+  decide: [0,0,1], learn: [1,1,1], test: [1,0,1] };
+const pStep = (u, n) => { const v = clamp01(u) * n, i = Math.min(n - 1, Math.floor(v)); return i + ease(v - i); };
+
+function derive(t) {
+  let ci = 0; while (ci < CH.length - 1 && t >= START[ci + 1]) ci++;
+  const ch = CH[ci], id = ch.id, lt = t - START[ci];
+  let p = 6;
+  if (id === 'data') p = 0;
+  else if (id === 'encode') p = ease((lt - 1.8) / 2.6);
+  else if (id === 'rotate') p = 1 + pStep((lt - 0.8) / 6.0, 3);
+  else if (id === 'entangle') p = 4 + pStep((lt - 0.8) / 4.4, 2);
+  let e = 0;
+  if (id === 'learn') e = NE * clamp01((lt - 1.2) / 13.8);
+  else if (id === 'test') e = NE;
+  return { t, ci, id, lt, dur: ch.dur, p, e, fr: frameAt(e) };
+}
+
+// ---------- drawing helpers ----------
+function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+function text(str, x, y, o = {}) {
+  ctx.font = o.font || F(400, 18, SANS);
+  ctx.fillStyle = o.fill || rgba(o.color || 'ink', o.alpha ?? 1);
+  ctx.textAlign = o.align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(str, x, y);
+  return ctx.measureText(str).width;
+}
+function wrap(str, maxW, font) {
+  ctx.font = font; const words = str.split(' '), lines = []; let cur = '';
+  for (const w of words) { const nxt = cur ? cur + ' ' + w : w; if (ctx.measureText(nxt).width > maxW && cur) { lines.push(cur); cur = w; } else cur = nxt; }
+  if (cur) lines.push(cur); return lines;
+}
+// matplotlib-style markers: 'o' for class 0, 's' for class 1, white edge
+function marker(x, y, cls, alpha = 1, s = 1, hollow = false) {
+  if (s <= 0) return;
+  ctx.beginPath();
+  if (cls === 0) ctx.arc(x, y, (hollow ? 9.5 : 7) * s, 0, Math.PI * 2);
+  else { const r = (hollow ? 8.5 : 6.2) * s; ctx.rect(x - r, y - r, 2 * r, 2 * r); }
+  if (hollow) { ctx.fillStyle = rgba('paper', alpha); ctx.fill(); ctx.lineWidth = 2.6; ctx.strokeStyle = rgba(CLASS[cls], alpha); ctx.stroke(); }
+  else { ctx.fillStyle = rgba(CLASS[cls], alpha); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = rgba('paper', alpha); ctx.stroke(); }
+}
+function arrow(x0, y0, x1, y1, color, w, head) {
+  const ang = Math.atan2(y1 - y0, x1 - x0), L = Math.hypot(x1 - x0, y1 - y0), h = Math.min(head, L * 0.6);
+  const bx = x1 - h * Math.cos(ang), by = y1 - h * Math.sin(ang);
+  ctx.strokeStyle = color; ctx.lineWidth = w; line(x0, y0, bx, by);
+  ctx.beginPath(); ctx.moveTo(x1, y1);
+  ctx.lineTo(bx + h * 0.42 * Math.sin(ang), by - h * 0.42 * Math.cos(ang));
+  ctx.lineTo(bx - h * 0.42 * Math.sin(ang), by + h * 0.42 * Math.cos(ang));
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+}
+function subfigLabel(letter, title, x, y) {
+  const w = text(`(${letter})`, x, y, { font: F(600, 25, SERIF) });
+  text(title, x + w + 8, y, { font: F(400, 25, SERIF) });
+}
+
+// ---------- layout ----------
+const REG = { a: 64, b: 690, c: 1484 };
+const PLOT = { x: 124, y: 226, s: 470 }, D0 = -0.1, D1 = 2.7;
+const sx = v => PLOT.x + (v - D0) / (D1 - D0) * PLOT.s;
+const sy = v => PLOT.y + PLOT.s - (v - D0) / (D1 - D0) * PLOT.s;
+const COLX = [812, 912, 1000, 1088, 1190, 1262], METX = 1366, WY = [584, 692];
+const BX = [872, 1246], BYc = 350, BR = 102;
+const RX0 = 1484, RX1 = 1856, BB = 368, BH = 112, BW = 62, BG = (RX1 - RX0 - 4 * BW) / 3;
+const barCX = i => RX0 + BW / 2 + i * (BW + BG);
+
+// ---------- header ----------
+function drawHeader(S, paused) {
+  text('How a quantum classifier learns', 64, 88, { font: F(500, 46, SERIF) });
+  text('A two-qubit QML Torch model, replayed step by step from a real training run', 64, 124, { font: F(400, 19, SANS), color: 'gray' });
+  ctx.font = F(400, 18, SANS);
+  const gap = 26, widths = CH.map(c => ctx.measureText(c.name).width);
+  let x = 1856 - widths.reduce((a, b) => a + b, 0) - gap * (CH.length - 1);
+  CH.forEach((c, i) => {
+    const cur = i === S.ci;
+    text(c.name, x, 88, { font: F(cur ? 600 : 400, 18, SANS), color: cur ? 'ink' : 'gray', alpha: i < S.ci || cur ? 1 : 0.55 });
+    if (cur) {
+      ctx.fillStyle = rgba('ink', 0.15); ctx.fillRect(x, 97, widths[i], 2);
+      ctx.fillStyle = COL.ink; ctx.fillRect(x, 97, widths[i] * clamp01(S.lt / S.dur), 2);
+    }
+    x += widths[i] + gap;
+  });
+  if (paused) text('paused — press space to resume', 1856, 124, { font: F(400, 17, SANS), color: 'red', align: 'right' });
+}
+
+// ---------- (a) data ----------
+const G = 60, heatCv = document.createElement('canvas'); heatCv.width = heatCv.height = G;
+const hctx = heatCv.getContext('2d'), heatImg = hctx.createImageData(G, G);
+const gridP = new Float64Array((G + 1) * (G + 1));
+let heatKey = null;
+function computeHeat(fr, key) {
+  if (key === heatKey) return; heatKey = key;
+  for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++)
+    gridP[j * (G + 1) + i] = predict([D0 + (D1 - D0) * i / G, D0 + (D1 - D0) * j / G], fr).prob;
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+    const p = (gridP[j*(G+1)+i] + gridP[j*(G+1)+i+1] + gridP[(j+1)*(G+1)+i] + gridP[(j+1)*(G+1)+i+1]) / 4;
+    const c = RGB[p >= 0.5 ? 'blue' : 'orange'], o = ((G - 1 - j) * G + i) * 4;
+    heatImg.data[o] = c[0]; heatImg.data[o+1] = c[1]; heatImg.data[o+2] = c[2];
+    heatImg.data[o+3] = Math.round(255 * 0.34 * Math.min(1, Math.abs(p - 0.5) * 2.1));
+  }
+  hctx.putImageData(heatImg, 0, 0);
+}
+function drawBoundary() { // marching squares on p = 0.5, drawn like a matplotlib dashed contour
+  const step = PLOT.s / G, segs = [];
+  const v = (i, j) => gridP[j * (G + 1) + i] - 0.5;
+  const pt = (i, j) => [PLOT.x + i * step, PLOT.y + PLOT.s - j * step];
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) {
+    const c = [[i, j], [i+1, j], [i+1, j+1], [i, j+1]], pts = [];
+    for (let k = 0; k < 4; k++) {
+      const [ai, aj] = c[k], [bi, bj] = c[(k + 1) % 4], va = v(ai, aj), vb = v(bi, bj);
+      if ((va < 0) !== (vb < 0)) { const f = va / (va - vb), A = pt(ai, aj), B = pt(bi, bj); pts.push([lerp(A[0], B[0], f), lerp(A[1], B[1], f)]); }
+    }
+    if (pts.length >= 2) segs.push([pts[0], pts[1]]);
+    if (pts.length === 4) segs.push([pts[2], pts[3]]);
+  }
+  ctx.beginPath(); for (const [a, b] of segs) { ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+  ctx.strokeStyle = rgba('ink', 0.85); ctx.lineWidth = 1.6; ctx.stroke();
+}
+function drawData(S, a) {
+  ctx.save(); ctx.globalAlpha = 0.25 + 0.75 * a;
+  subfigLabel('a', 'Training data', REG.a, 190);
+  if (S.id === 'learn') {
+    const acc = Math.round(T.frames[Math.min(NE, Math.floor(S.e))].acc * N_TRAIN);
+    text(`training accuracy ${acc}/${N_TRAIN}`, PLOT.x + PLOT.s, 190, { font: F(400, 17, SANS), color: 'gray', align: 'right' });
+  } else if (S.id === 'test') {
+    const shown = TEST_OK.filter((ok, i) => ok && S.lt > 0.6 + i * 0.12 + 0.2).length;
+    text(`test: ${shown}/${TEST_N} correct`, PLOT.x + PLOT.s, 190, { font: F(600, 18, SANS), align: 'right' });
+  }
+
+  // shading + decision boundary
+  const heat = S.id === 'learn' ? ease(S.lt / 1.0) : S.id === 'test' ? 1 : 0;
+  if (heat > 0) {
+    computeHeat(S.fr, S.e.toFixed(3));
+    ctx.save(); ctx.globalAlpha *= heat; ctx.imageSmoothingEnabled = true;
+    ctx.beginPath(); ctx.rect(PLOT.x, PLOT.y, PLOT.s, PLOT.s); ctx.clip();
+    ctx.drawImage(heatCv, PLOT.x, PLOT.y, PLOT.s, PLOT.s);
+    ctx.setLineDash([7, 5]); drawBoundary(); ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // axes: four spines, outward ticks
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.2; ctx.strokeRect(PLOT.x, PLOT.y, PLOT.s, PLOT.s);
+  for (const t of [0, 0.5, 1, 1.5, 2, 2.5]) {
+    line(sx(t), PLOT.y + PLOT.s, sx(t), PLOT.y + PLOT.s + 6); line(PLOT.x - 6, sy(t), PLOT.x, sy(t));
+    text(t.toFixed(1), sx(t), PLOT.y + PLOT.s + 26, { font: F(400, 15, SANS), align: 'center' });
+    text(t.toFixed(1), PLOT.x - 11, sy(t) + 5, { font: F(400, 15, SANS), align: 'right' });
+  }
+  text('feature x₁ (rad)', PLOT.x + PLOT.s / 2, PLOT.y + PLOT.s + 58, { font: F('italic 400', 20, SERIF), align: 'center' });
+  ctx.save(); ctx.translate(PLOT.x - 56, PLOT.y + PLOT.s / 2); ctx.rotate(-Math.PI / 2);
+  text('feature x₂ (rad)', 0, 0, { font: F('italic 400', 20, SERIF), align: 'center' }); ctx.restore();
+
+  // points
+  const trainAlpha = S.id === 'test' ? 0.3 : 1;
+  T.train.x.forEach((x, i) => {
+    const s = S.id === 'data' ? ease((S.lt - 0.2 - i * 0.035) / 0.35) : 1;
+    marker(sx(x[0]), sy(x[1]), T.train.y[i], trainAlpha, s);
+  });
+  if (S.id === 'test') {
+    T.test.x.forEach((x, i) => {
+      const s = ease((S.lt - 0.6 - i * 0.12) / 0.35); if (s <= 0) return;
+      const X = sx(x[0]), Y = sy(x[1]);
+      marker(X, Y, T.test.y[i], 1, s, true);
+      if (!TEST_OK[i]) { ctx.strokeStyle = COL.red; ctx.lineWidth = 2; line(X - 5, Y - 5, X + 5, Y + 5); line(X - 5, Y + 5, X + 5, Y - 5); }
+    });
+  }
+
+  // the featured example, annotated like matplotlib's annotate()
+  if (S.ci > 0 || S.lt > 3.0) {
+    const X = sx(SX[0]), Y = sy(SX[1]), k = S.ci > 0 ? 1 : ease((S.lt - 3.0) / 0.5);
+    ctx.save(); ctx.globalAlpha *= k * (S.id === 'test' ? 0.4 : 1);
+    ctx.beginPath(); ctx.arc(X, Y, 14, 0, Math.PI * 2); ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.stroke();
+    const lx = X + 56, ly = Y - 44;
+    ctx.lineWidth = 1; line(X + 10, Y - 10, lx - 4, ly + 8);
+    text(`this example (${fmt(SX[0])}, ${fmt(SX[1])})`, lx, ly, { font: F(400, 16, SANS) });
+    ctx.restore();
+  }
+
+  // legend, top-left inside the axes
+  const lx = PLOT.x + 14, ly = PLOT.y + 14, rows = S.id === 'test' ? 3 : 2;
+  ctx.fillStyle = rgba('paper', 0.9); ctx.fillRect(lx, ly, 156, 14 + rows * 26);
+  ctx.strokeStyle = rgba('ink', 0.2); ctx.lineWidth = 1; ctx.strokeRect(lx + 0.5, ly + 0.5, 155, 13 + rows * 26);
+  marker(lx + 22, ly + 22, 0); text('orange class', lx + 40, ly + 28, { font: F(400, 16, SANS) });
+  marker(lx + 22, ly + 48, 1); text('blue class', lx + 40, ly + 54, { font: F(400, 16, SANS) });
+  if (rows === 3) { ctx.beginPath(); ctx.arc(lx + 22, ly + 74, 7.5, 0, Math.PI * 2); ctx.strokeStyle = COL.ink; ctx.lineWidth = 2; ctx.stroke();
+    text('test example', lx + 40, ly + 80, { font: F(400, 16, SANS) }); }
+  ctx.restore();
+}
+
+// ---------- (b) circuit ----------
+const AZ = -0.6, EL = 0.33, cA = Math.cos(AZ), sA = Math.sin(AZ), cE = Math.cos(EL), sE = Math.sin(EL);
+function proj(cx, cy, R, v) {
+  const xp = v[0] * cA - v[1] * sA, yp = v[0] * sA + v[1] * cA;
+  return [cx + R * xp, cy - R * (v[2] * cE + yp * sE), -yp * cE + v[2] * sE];
+}
+function drawBloch(cx, cy, R, vec, trail) {
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = rgba('ink', 0.035); ctx.fill();
+  ctx.strokeStyle = rgba('ink', 0.75); ctx.lineWidth = 1.2; ctx.stroke();
+  const ring = (fn, aFront, aBack) => {
+    for (let k = 0; k < 72; k++) {
+      const A = proj(cx, cy, R, fn(k / 72 * Math.PI * 2)), B = proj(cx, cy, R, fn((k + 1) / 72 * Math.PI * 2));
+      const front = A[2] + B[2] >= 0;
+      ctx.setLineDash(front ? [] : [3, 4]); ctx.strokeStyle = rgba('ink', front ? aFront : aBack);
+      line(A[0], A[1], B[0], B[1]);
+    }
+    ctx.setLineDash([]);
+  };
+  ctx.lineWidth = 1;
+  ring(t => [Math.cos(t), Math.sin(t), 0], 0.6, 0.3);
+  ring(t => [Math.sin(t), 0, Math.cos(t)], 0.22, 0.12);
+  ctx.strokeStyle = rgba('ink', 0.3); ctx.lineWidth = 0.8;
+  for (const ax of [[1, 0, 0], [0, 1, 0], [0, 0, 1]]) {
+    const A = proj(cx, cy, R, ax), B = proj(cx, cy, R, ax.map(v => -v)); line(A[0], A[1], B[0], B[1]);
+  }
+  const top = proj(cx, cy, R, [0, 0, 1]), bot = proj(cx, cy, R, [0, 0, -1]);
+  const px = proj(cx, cy, R * 1.12, [1, 0, 0]), py = proj(cx, cy, R * 1.12, [0, 1, 0]);
+  text('|0⟩', top[0], top[1] - 10, { font: F(400, 22, SERIF), align: 'center' });
+  text('|1⟩', bot[0], bot[1] + 26, { font: F(400, 22, SERIF), align: 'center' });
+  text('x', px[0] - 4, px[1] + 16, { font: F('italic 400', 17, SERIF), color: 'gray', align: 'center' });
+  text('y', py[0] + 10, py[1] + 6, { font: F('italic 400', 17, SERIF), color: 'gray', align: 'center' });
+  for (let i = 1; i < trail.length; i++) {
+    const A = proj(cx, cy, R, trail[i - 1]), B = proj(cx, cy, R, trail[i]);
+    ctx.strokeStyle = rgba('red', 0.5 * i / trail.length); ctx.lineWidth = 1.8; line(A[0], A[1], B[0], B[1]);
+  }
+  const tip = proj(cx, cy, R, vec), foot = proj(cx, cy, R, [vec[0], vec[1], 0]), o = proj(cx, cy, R, [0, 0, 0]);
+  ctx.setLineDash([2, 3]); ctx.strokeStyle = rgba('ink', 0.4); ctx.lineWidth = 1; line(tip[0], tip[1], foot[0], foot[1]); ctx.setLineDash([]);
+  if (Math.hypot(tip[0] - o[0], tip[1] - o[1]) > 3) arrow(o[0], o[1], tip[0], tip[1], COL.red, 3, 15);
+  else { ctx.beginPath(); ctx.arc(o[0], o[1], 4, 0, Math.PI * 2); ctx.fillStyle = COL.red; ctx.fill(); }
+}
+function trailPts(S, w) {
+  const pts = [];
+  const p0 = { encode: 0, rotate: 1, entangle: 4 }[S.id];
+  if (p0 !== undefined) {
+    for (let p = Math.max(p0, S.p - 1.2); p <= S.p + 1e-9; p += 0.04) pts.push(bloch(runCircuit(SX, S.fr.q, p, TB), w));
+  } else if (S.id === 'learn') {
+    for (let e = Math.max(0, S.e - 12); e <= S.e + 1e-9; e += 0.3) pts.push(bloch(runCircuit(SX, frameAt(e).q, 6, TB), w));
+  }
+  return pts;
+}
+function gateSymbol(axis, x, y) { // R with an italic subscript, centered on x
+  ctx.font = F('italic 400', 26, SERIF); const wR = ctx.measureText('R').width;
+  ctx.font = F('italic 400', 17, SERIF); const wS = ctx.measureText(axis).width;
+  const x0 = x - (wR + wS) / 2;
+  text('R', x0, y + 8, { font: F('italic 400', 26, SERIF) });
+  text(axis, x0 + wR, y + 14, { font: F('italic 400', 17, SERIF) });
+}
+function drawCircuit(S, a) {
+  ctx.save(); ctx.globalAlpha = 0.25 + 0.75 * a;
+  subfigLabel('b', 'The circuit, and each qubit’s state', REG.b, 190);
+
+  const st = runCircuit(SX, S.fr.q, S.p, BUF);
+  const vecs = [bloch(st, 0), bloch(st, 1)];
+  for (let w = 0; w < 2; w++) {
+    drawBloch(BX[w], BYc, BR, vecs[w], trailPts(S, w));
+    const len = Math.hypot(...vecs[w]), short = len < 0.985;
+    ctx.font = F(400, 21, SERIF); const w1 = ctx.measureText(`qubit ${w + 1}`).width;
+    ctx.font = F(400, 16, SANS); const w2 = ctx.measureText(`arrow length ${len.toFixed(2)}`).width;
+    const x0 = BX[w] - (w1 + 14 + w2) / 2, y = BYc + BR + 44;
+    text(`qubit ${w + 1}`, x0, y, { font: F(400, 21, SERIF) });
+    text(`arrow length ${len.toFixed(2)}`, x0 + w1 + 14, y, { font: F(short ? 600 : 400, 16, SANS), color: short ? 'red' : 'gray' });
+  }
+  if (S.ci >= IDX.entangle && S.ci <= IDX.decide && Math.hypot(...vecs[0]) < 0.985) {
+    const mx = (BX[0] + BX[1]) / 2;
+    text('shorter arrow', mx, BYc - 4, { font: F('italic 400', 18, SERIF), color: 'gray', align: 'center' });
+    text('= entangled', mx, BYc + 18, { font: F('italic 400', 18, SERIF), color: 'gray', align: 'center' });
+  }
+
+  // wires
+  for (let w = 0; w < 2; w++) {
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.4; line(752, WY[w], METX - 28, WY[w]);
+    text(`q${w ? '₂' : '₁'}`, 694, WY[w] + 7, { font: F('italic 400', 21, SERIF), color: 'gray' });
+    text('|0⟩', 746, WY[w] + 8, { font: F(400, 24, SERIF), align: 'right' });
+  }
+
+  // single-qubit gates
+  const pulse = S.id === 'learn' && S.e < NE && !RM ? (1 - (S.e % 1)) ** 2 : 0;
+  const axes = ['y', 'y', 'z', 'y'];
+  for (let c = 0; c < 4; c++) for (let w = 0; w < 2; w++) {
+    const x = COLX[c], y = WY[w], on = S.p > c && S.p < c + 1;
+    ctx.fillStyle = COL.paper; ctx.fillRect(x - 32, y - 28, 64, 56);
+    if (on) { ctx.fillStyle = rgba('mark', 0.9); ctx.fillRect(x - 36, y - 30, 72, 60); }
+    else if (c === 0) { ctx.fillStyle = rgba('ink', 0.07); ctx.fillRect(x - 32, y - 28, 64, 56); }
+    else if (pulse > 0) { ctx.fillStyle = rgba('mark', 0.85 * pulse); ctx.fillRect(x - 36, y - 30, 72, 60); }
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.4; ctx.strokeRect(x - 32, y - 28, 64, 56);
+    gateSymbol(axes[c], x, y);
+    let val;
+    if (c === 0) val = (S.id === 'data' || (S.id === 'encode' && S.lt < 1.5)) ? `x${w ? '₂' : '₁'}` : fmt(SX[w]);
+    else val = fmt(S.fr.q[w][c - 1]);
+    text(val, x, y + 48, { font: c === 0 && val.startsWith('x') ? F('italic 400', 18, SERIF) : F(400, 15, SANS), align: 'center', color: c === 0 ? 'ink' : 'gray' });
+  }
+  // CNOTs
+  for (let c = 4; c < 6; c++) {
+    const x = COLX[c], on = S.p > c && S.p < c + 1, ctl = c === 4 ? 0 : 1, tgt = 1 - ctl;
+    if (on) { ctx.fillStyle = rgba('mark', 0.9); ctx.fillRect(x - 26, WY[0] - 30, 52, WY[1] - WY[0] + 60); }
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.4; line(x, WY[ctl], x, WY[tgt] + (tgt > ctl ? 15 : -15));
+    ctx.beginPath(); ctx.arc(x, WY[ctl], 6.5, 0, Math.PI * 2); ctx.fillStyle = COL.ink; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, WY[tgt], 15, 0, Math.PI * 2); ctx.stroke();
+    line(x - 15, WY[tgt], x + 15, WY[tgt]); line(x, WY[tgt] - 15, x, WY[tgt] + 15);
+  }
+  // meters
+  let bits = null;
+  if (S.id === 'measure') { let i = -1; for (let k = 0; k < SHOT_N; k++) if (shotTime(k) <= S.lt) i = k; if (i >= 0 && S.lt < SH0 + SHD + 0.3) bits = [SHOTS[i] >> 1, SHOTS[i] & 1]; }
+  for (let w = 0; w < 2; w++) {
+    const y = WY[w];
+    ctx.fillStyle = bits ? rgba('mark', 0.9) : COL.paper; ctx.fillRect(METX - 28, y - 26, 56, 52);
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.4; ctx.strokeRect(METX - 28, y - 26, 56, 52);
+    ctx.beginPath(); ctx.arc(METX, y + 12, 17, Math.PI, Math.PI * 2); ctx.stroke();
+    const ang = bits ? (bits[w] ? -Math.PI * 0.22 : -Math.PI * 0.78) : -Math.PI * 0.3;
+    arrow(METX, y + 12, METX + 22 * Math.cos(ang), y + 12 + 22 * Math.sin(ang), COL.ink, 1.4, 7);
+    if (bits) text(String(bits[w]), METX + 46, y + 9, { font: F(600, 26, SERIF), color: 'red', align: 'center' });
+  }
+
+  // stage brackets
+  const groups = [
+    { label: 'encode the data', x0: 776, x1: 848, on: ['encode'] },
+    { label: 'trainable rotations', x0: 876, x1: 1124, on: ['rotate', 'learn'] },
+    { label: 'entangle', x0: 1164, x1: 1288, on: ['entangle'] },
+    { label: 'measure', x0: 1336, x1: 1396, on: ['measure'] },
+  ];
+  for (const g of groups) {
+    const on = g.on.includes(S.id);
+    ctx.strokeStyle = on ? COL.ink : rgba('ink', 0.3); ctx.lineWidth = on ? 1.6 : 1;
+    line(g.x0, 770, g.x1, 770); line(g.x0, 763, g.x0, 770); line(g.x1, 763, g.x1, 770);
+    text(g.label, (g.x0 + g.x1) / 2, 796, { font: F(on ? 'italic 500' : 'italic 400', 19, SERIF), align: 'center', color: on ? 'ink' : 'gray' });
+  }
+  ctx.restore();
+}
+
+// ---------- (c) readout ----------
+function readout(S) {
+  if (S.ci < IDX.measure) return null;
+  if (S.id === 'measure') {
+    const counts = [0, 0, 0, 0]; let n = 0;
+    for (let i = 0; i < SHOT_N; i++) if (shotTime(i) + (RM ? 0 : FLY) <= S.lt) { counts[SHOTS[i]]++; n++; }
+    if (!n) return { p: null, n };
+    const m = ease((S.lt - (SH0 + SHD + FLY + 0.3)) / 0.6);
+    const p = counts.map((c, i) => lerp(c / n, P0.p[i], m));
+    return { p, z: zFromProbs(p), n, exact: m >= 1 };
+  }
+  const r = predict(SX, S.fr);
+  return { p: r.p, z: r.z, n: SHOT_N, exact: true, pred: r };
+}
+function drawReadout(S, a) {
+  ctx.save(); ctx.globalAlpha = 0.25 + 0.75 * a;
+  subfigLabel('c', 'Readout', REG.c, 190);
+  const R = readout(S);
+  if (S.id === 'measure' && R && !R.exact) text(`${R.n} of ${SHOT_N} runs`, RX1, 190, { font: F(400, 17, SANS), color: 'gray', align: 'right' });
+  else if (R) text('exact, from simulator', RX1, 190, { font: F(400, 17, SANS), color: 'gray', align: 'right' });
+
+  // outcome bar chart
+  text('probability of each outcome', RX0, 234, { font: F(400, 17, SANS), color: 'gray' });
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.2; line(RX0, BB, RX1, BB);
+  for (let i = 0; i < 4; i++) {
+    const x = barCX(i) - BW / 2;
+    if (R && R.p) {
+      const h = BH * R.p[i];
+      ctx.fillStyle = rgba('ink', 0.72); ctx.fillRect(x, BB - h, BW, h);
+      text(pct(R.p[i]), barCX(i), BB - h - 7, { font: F(400, 15, SANS), align: 'center' });
+    }
+    text(['|00⟩', '|01⟩', '|10⟩', '|11⟩'][i], barCX(i), BB + 26, { font: F(400, 20, SERIF), align: 'center' });
+  }
+
+  // <Z> number lines
+  text('average ⟨Z⟩ for each qubit', RX0, 438, { font: F(400, 17, SANS), color: 'gray' });
+  const GX0 = 1632, GX1 = RX1, gx = v => lerp(GX0, GX1, (v + 1) / 2);
+  for (let w = 0; w < 2; w++) {
+    const y = 470 + w * 34;
+    text(`qubit ${w + 1}`, RX0, y + 6, { font: F(400, 19, SERIF) });
+    const zv = R && R.p ? R.z[w] : null;
+    text(zv === null ? '–' : fmt(zv), 1612, y + 6, { font: F(400, 16, SANS), align: 'right' });
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1; line(GX0, y, GX1, y);
+    for (const v of [-1, 0, 1]) line(gx(v), y - 5, gx(v), y + 5);
+    if (zv !== null) { ctx.beginPath(); ctx.arc(gx(zv), y, 6.5, 0, Math.PI * 2); ctx.fillStyle = COL.red; ctx.fill(); }
+  }
+  for (const [v, l] of [[-1, '−1'], [0, '0'], [1, '+1']]) text(l, gx(v), 526, { font: F(400, 13, SANS), color: 'gray', align: 'center' });
+
+  // prediction
+  const fr = S.fr, showPred = S.ci >= IDX.decide && R && R.pred;
+  const reveal = t0 => S.id !== 'decide' ? 1 : ease((S.lt - t0) / 0.5);
+  text('prediction', RX0, 572, { font: F(400, 17, SANS), color: 'gray' });
+  text('s = w₁⟨Z₁⟩ + w₂⟨Z₂⟩ + b', RX0, 604, { font: F('italic 400', 22, SERIF) });
+  if (showPred) {
+    ctx.save(); ctx.globalAlpha *= reveal(0.6);
+    const z = R.pred.z, b = fr.b;
+    text(`= ${fmt(fr.w[0])}(${fmt(z[0])}) + ${fmt(fr.w[1])}(${fmt(z[1])}) ${b < 0 ? '−' : '+'} ${Math.abs(b).toFixed(2)} = ${fmt(R.pred.score)}`,
+      RX0, 632, { font: F(400, 16, SANS) });
+    ctx.restore();
+  }
+  const sy0 = 664, gr = ctx.createLinearGradient(RX0, 0, RX1, 0);
+  gr.addColorStop(0, COL.orange); gr.addColorStop(0.5, rgba('ink', 0.15)); gr.addColorStop(1, COL.blue);
+  ctx.fillStyle = gr; ctx.fillRect(RX0, sy0 - 3, RX1 - RX0, 6);
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1; line((RX0 + RX1) / 2, sy0 - 8, (RX0 + RX1) / 2, sy0 + 8);
+  text('orange', RX0, sy0 + 26, { font: F(400, 15, SANS), color: 'gray' });
+  text('50/50', (RX0 + RX1) / 2, sy0 + 26, { font: F(400, 13, SANS), color: 'gray', align: 'center' });
+  text('blue', RX1, sy0 + 26, { font: F(400, 15, SANS), color: 'gray', align: 'right' });
+  if (showPred) {
+    const target = R.pred.prob;
+    const shown = S.id === 'decide' ? lerp(0.5, target, ease((S.lt - 1.6) / 1.2)) : target;
+    const mx = lerp(RX0, RX1, shown);
+    ctx.beginPath(); ctx.moveTo(mx, sy0 - 5); ctx.lineTo(mx - 8, sy0 - 19); ctx.lineTo(mx + 8, sy0 - 19); ctx.closePath();
+    ctx.fillStyle = COL.ink; ctx.fill();
+    ctx.save(); ctx.globalAlpha *= reveal(3.0);
+    const pc = target >= 0.5 ? 1 : 0, right = pc === SY;
+    const w1 = text(`Guess: ${CLASS[pc]}, ${pct(conf(target, pc))} sure`, RX0, 722, { font: F(500, 23, SERIF) });
+    text(right ? '✓ correct' : '✗ wrong', RX1, 722, { font: F(400, 17, SANS), align: 'right', color: right ? 'ink' : 'red' });
+    if (S.ci >= IDX.learn) text(`(${pct(conf(P0.prob, SY))} sure before training)`, RX0, 746, { font: F(400, 15, SANS), color: 'gray' });
+    ctx.restore();
+  }
+
+  // loss curve
+  const cx0 = 1512, cx1 = RX1, cy0 = 784, cy1 = 828, LMAX = 0.65;
+  const lx = e => lerp(cx0, cx1, e / NE), ly = v => lerp(cy1, cy0, v / LMAX);
+  text('training loss', RX0, 772, { font: F(400, 17, SANS), color: 'gray' });
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1; line(cx0, cy0 - 4, cx0, cy1); line(cx0, cy1, cx1, cy1);
+  text('0.6', cx0 - 6, ly(0.6) + 4, { font: F(400, 12, SANS), color: 'gray', align: 'right' });
+  text('0', cx0 - 6, cy1 + 4, { font: F(400, 12, SANS), color: 'gray', align: 'right' });
+  text(`epoch ${NE}`, cx1, cy1 + 18, { font: F(400, 12, SANS), color: 'gray', align: 'right' });
+  if (S.ci >= IDX.learn) {
+    const pts = [];
+    for (let i = 0; i <= Math.floor(S.e); i++) pts.push([lx(i), ly(T.frames[i].loss)]);
+    if (S.e % 1 > 0 && S.e < NE) { const i = Math.floor(S.e); pts.push([lx(S.e), ly(lerp(T.frames[i].loss, T.frames[i + 1].loss, S.e % 1))]); }
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.strokeStyle = COL.red; ctx.lineWidth = 2; ctx.stroke();
+    const end = pts[pts.length - 1];
+    ctx.beginPath(); ctx.arc(end[0], end[1], 4, 0, Math.PI * 2); ctx.fillStyle = COL.red; ctx.fill();
+    const cur = T.frames[Math.min(NE, Math.floor(S.e))].loss;
+    text(`${fmt(T.frames[0].loss, 3)} → ${fmt(cur, 3)}`, RX1, 772, { font: F(500, 16, SANS), align: 'right' });
+  }
+  ctx.restore();
+}
+
+// ---------- overlay: things that cross sub-figures ----------
+function drawOverlay(S) {
+  if (S.id === 'encode' && S.lt > 0.25 && S.lt < 1.6) {
+    const u = ease((S.lt - 0.25) / 1.2), X = sx(SX[0]), Y = sy(SX[1]);
+    for (let w = 0; w < 2; w++) {
+      const x = lerp(X + 30, COLX[0], u), y = lerp(Y - 10, WY[w] + 48, u) - Math.sin(u * Math.PI) * 80;
+      text(fmt(SX[w]), x, y, { font: F('italic 500', 28, SERIF), color: 'red', align: 'center' });
+    }
+  }
+  if (S.id === 'measure' && !RM) {
+    const R = readout(S);
+    for (let i = 0; i < SHOT_N; i++) {
+      const u = (S.lt - shotTime(i)) / FLY; if (u < 0 || u > 1) continue;
+      const o = SHOTS[i], h = R && R.p ? BH * R.p[o] : 0;
+      const e = ease(u), x = lerp(METX + 20, barCX(o), e), y = lerp(WY[0] + 54, BB - h - 4, e) - Math.sin(u * Math.PI) * 70;
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fillStyle = COL.red; ctx.fill();
+    }
+  }
+}
+
+// ---------- narration ----------
+function caption(S) {
+  const x1 = fmt(SX[0]), x2 = fmt(SX[1]);
+  const pc0 = P0.prob >= 0.5 ? 1 : 0, c0 = conf(P0.prob, pc0), right0 = pc0 === SY;
+  switch (S.id) {
+    case 'data': return [`${N_TRAIN} examples, two numbers each, two classes.`,
+      'We want a quantum circuit that can tell the orange points from the blue ones.'];
+    case 'encode': return ['First, the data goes into the qubits.',
+      `Both qubits start at |0⟩. Each one is rotated by one feature: ${x1} radians for qubit 1, ${x2} for qubit 2.`];
+    case 'rotate': return ['Then three more rotations per qubit, which the model gets to choose.',
+      'These six angles are trainable weights. Right now they are random.'];
+    case 'entangle': return ['Two CNOT gates entangle the qubits.',
+      `Watch the arrows shrink (to ${ENT_LEN.toFixed(2)}). Once the qubits are entangled, neither one has a definite state on its own.`];
+    case 'measure': return ['Measuring a qubit gives 0 or 1, at random.',
+      'Run the circuit many times and average the results to get ⟨Z⟩, a number between −1 and +1. The simulator can also compute the exact average.'];
+    case 'decide': return ['A small linear layer turns the two averages into a guess.',
+      right0 ? `Untrained, the model says ${CLASS[pc0]}, ${pct(c0)} sure. That’s correct, but only just.`
+             : `Untrained, the model says ${CLASS[pc0]}, ${pct(c0)} sure. That’s wrong; this one is ${CLASS[SY]}.`];
+    case 'learn': {
+      const ep = Math.min(NE, Math.floor(S.e));
+      return [`Training adjusts all ${N_WEIGHTS} weights to lower the loss.`,
+        `Epoch ${ep} of ${NE}, loss ${fmt(T.frames[ep].loss, 3)}. The shading shows what the model would guess anywhere on the plot.`];
+    }
+    case 'test': return [`${TEST_K} of ${TEST_N} test examples correct.`,
+      CLS_K === TEST_N
+        ? `The rings are test points it never trained on. A plain linear classifier also gets ${CLS_K}/${TEST_N} on data this easy, so this shows how the method works, not a quantum advantage.`
+        : `The rings are test points it never trained on. A plain linear classifier gets ${CLS_K}/${TEST_N} on the same data. This shows how the method works, not a quantum advantage.`];
+  }
+  return ['', ''];
+}
+function drawCaption(S) {
+  const [h, sub] = caption(S), k = ease(S.lt / 0.5);
+  ctx.strokeStyle = rgba('ink', 0.18); ctx.lineWidth = 1; line(64, 864, 1856, 864);
+  ctx.save(); ctx.globalAlpha = k;
+  text(`${S.ci + 1}.`, 64, 922, { font: F(400, 42, SERIF), color: 'gray' });
+  text(h, 112, 922, { font: F(500, 42, SERIF) });
+  wrap(sub, 1744, F(400, 26, SERIF)).slice(0, 2).forEach((l, i) => text(l, 112, 964 + i * 34, { font: F(400, 26, SERIF), color: 'gray' }));
+  ctx.restore();
+}
+const LOCAL = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+function drawFooter() {
+  text(`Replayed from a recorded run: ${T.source}.`, 64, 1052, { font: F(400, 14, SANS), color: 'gray' });
+  if (!recording) text(`space: pause    ← →: step    F: fullscreen${LOCAL && window.MediaRecorder ? '    R: save video' : ''}`,
+    1856, 1052, { font: F(400, 14, SANS), color: 'gray', alpha: 0.7, align: 'right' });
+}
+
+// ---------- frame ----------
+const panelA = [1, 0.3, 0.3];
+let clock = 0, paused = false, last = performance.now(), wrapped = false, recording = false, recorder = null;
+const q = new URLSearchParams(location.search);
+if (q.has('t')) clock = Math.max(0, Math.min(TOTAL - 0.01, parseFloat(q.get('t')) || 0));
+else if (location.hash !== '#record') clock = 3.2;
+if (q.has('paused')) paused = true;
+
+let k = 1;
+function fit() {
+  const s = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px';
+  if (recording) return;
+  k = Math.max(1, Math.min(2, s * (devicePixelRatio || 1)));
+  cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+}
+addEventListener('resize', fit); fit();
+
+function draw(S, dt) {
+  const target = SPOT[S.id], rate = 1 - Math.exp(-dt * 6);
+  for (let i = 0; i < 3; i++) panelA[i] = q.has('t') ? target[i] : lerp(panelA[i], target[i], rate);
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  ctx.fillStyle = COL.paper; ctx.fillRect(0, 0, W, H);
+  drawHeader(S, paused && !q.has('t'));
+  drawData(S, panelA[0]);
+  drawCircuit(S, panelA[1]);
+  drawReadout(S, panelA[2]);
+  drawOverlay(S);
+  drawCaption(S);
+  drawFooter();
+  let fade = 0;
+  if (S.id === 'test') fade = ease((S.lt - (S.dur - 1.2)) / 1.0);
+  if (S.id === 'data' && wrapped) fade = Math.max(fade, 1 - ease(S.lt / 0.7));
+  if (fade > 0) { ctx.fillStyle = rgba('paper', fade); ctx.fillRect(0, 0, W, H); }
+}
+function tick(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (!paused) clock += dt;
+  if (clock >= TOTAL) { clock -= TOTAL; wrapped = true; if (recording) stopRecording(); }
+  draw(derive(clock), dt);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ---------- controls ----------
+function jump(dir) {
+  const S = derive(clock);
+  if (dir > 0) clock = START[(S.ci + 1) % CH.length];
+  else clock = S.lt > 1 ? START[S.ci] : START[(S.ci - 1 + CH.length) % CH.length];
+  wrapped = false;
+}
+function toggleFull() {
+  try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); } catch (e) { /* fullscreen not allowed here */ }
+}
+addEventListener('keydown', ev => {
+  if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  if (ev.key === ' ' || ev.key === 'k') { paused = !paused; ev.preventDefault(); }
+  else if (ev.key === 'ArrowRight') { jump(1); ev.preventDefault(); }
+  else if (ev.key === 'ArrowLeft') { jump(-1); ev.preventDefault(); }
+  else if (ev.key === 'f' || ev.key === 'F') toggleFull();
+  else if ((ev.key === 'r' || ev.key === 'R') && LOCAL && !recording) startRecording();
+});
+cv.addEventListener('click', () => { paused = !paused; });
+cv.addEventListener('dblclick', () => { paused = !paused; toggleFull(); });
+
+// ---------- save one loop as a video (works when opened locally in Chrome) ----------
+function startRecording() {
+  if (!cv.captureStream || !window.MediaRecorder) return;
+  const types = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  const type = types.find(t => MediaRecorder.isTypeSupported(t)); if (!type) return;
+  recording = true; paused = false; clock = 0; wrapped = false;
+  cv.width = W; cv.height = H;
+  const chunks = [];
+  recorder = new MediaRecorder(cv.captureStream(60), { mimeType: type, videoBitsPerSecond: 14e6 });
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    recording = false; fit(); document.title = 'How a Quantum Classifier Learns';
+    const blob = new Blob(chunks, { type }), ext = type.includes('mp4') ? 'mp4' : 'webm';
+    if (location.hash === '#record') {
+      fetch('/upload.' + ext, { method: 'PUT', body: blob }).then(() => { document.title = 'UPLOADED'; }, () => { document.title = 'UPLOAD FAILED'; });
+      return;
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'qml-torch-loop.' + ext;
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  recorder.start(1000);
+  document.title = '● Recording one loop…';
+}
+function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); }
+if (location.hash === '#record' && LOCAL) (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(startRecording, 600));
+})();
+</script>
+</body>
+</html>

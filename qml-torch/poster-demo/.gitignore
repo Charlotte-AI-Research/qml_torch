@@ -1,0 +1,3 @@
+# Rendered video is large; regenerate with the R key instead of committing it.
+*.mp4
+*.webm
